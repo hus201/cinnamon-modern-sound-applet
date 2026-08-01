@@ -1,0 +1,122 @@
+.modern-sound-menu {
+    min-width: 300px;
+}
+
+.modern-sound-volume-item {
+    padding: 12px 14px 8px;
+}
+
+.modern-sound-volume-icon {
+    icon-size: 16px;
+    color: #e8eaed;
+}
+
+.modern-sound-volume-row {
+    spacing: 8px;
+}
+
+.modern-sound-percent-label {
+    font-weight: 600;
+    min-width: 3.2em;
+    width: 3.2em;
+    color: #8ab4f8;
+}
+
+.modern-sound-volume-slider {
+    width: 140px;
+    height: 22px;
+    min-width: 140px;
+    min-height: 22px;
+    -slider-height: 0.4em;
+    -slider-background-color: rgba(255, 255, 255, 0.12);
+    -slider-active-background-color: #8ab4f8;
+    -slider-border-color: transparent;
+    -slider-active-border-color: transparent;
+    -slider-handle-radius: 0.55em;
+}
+
+.modern-sound-menu .modern-sound-separator {
+    -gradient-height: 1px;
+    -margin-horizontal: 0;
+    -gradient-start: rgba(255, 255, 255, 0.06);
+    -gradient-end: rgba(255, 255, 255, 0.2);
+    height: 1px;
+}
+
+.modern-sound-quick-actions-item {
+    padding: 10px 12px 14px;
+}
+
+.modern-sound-quick-actions-item:hover,
+.modern-sound-quick-actions-item:focus {
+    background-color: transparent;
+}
+
+.modern-sound-quick-actions {
+    width: 100%;
+}
+
+.modern-sound-quick-cell {
+    padding: 0 5px;
+}
+
+.modern-sound-quick-content {
+    spacing: 8px;
+}
+
+.modern-sound-quick-btn {
+    min-height: 72px;
+    padding: 12px 8px 10px;
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e8eaed;
+}
+
+.modern-sound-quick-btn:hover {
+    background-color: rgba(138, 180, 248, 0.12);
+    border-color: rgba(138, 180, 248, 0.42);
+}
+
+.modern-sound-quick-btn:focus {
+    background-color: rgba(138, 180, 248, 0.1);
+    border-color: rgba(138, 180, 248, 0.45);
+}
+
+.modern-sound-quick-btn:active {
+    background-color: rgba(138, 180, 248, 0.2);
+    border-color: rgba(138, 180, 248, 0.55);
+}
+
+.modern-sound-quick-btn.active {
+    background-color: rgba(138, 180, 248, 0.18);
+    border-color: rgba(138, 180, 248, 0.58);
+}
+
+.modern-sound-quick-btn:hover .modern-sound-quick-icon {
+    color: #d2e3ff;
+}
+
+.modern-sound-quick-btn.active .modern-sound-quick-icon {
+    color: #8ab4f8;
+}
+
+.modern-sound-quick-icon {
+    icon-size: 24px;
+    color: #f0f3f7;
+}
+
+.modern-sound-quick-label {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #aeb4bb;
+}
+
+.modern-sound-quick-btn:hover .modern-sound-quick-label {
+    color: #f0f3f7;
+}
+
+.modern-sound-quick-btn.active .modern-sound-quick-label {
+    color: #c8daff;
+}
