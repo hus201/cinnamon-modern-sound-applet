@@ -15,15 +15,13 @@ A modern Cinnamon panel sound applet — compact by default, expandable when nee
 - **Applications** section — per-app volume and media controls
   - Simple apps: icon + mini slider (e.g. Firefox)
   - Media players: track title + prev / play-pause / next (e.g. Spotify)
-- **Sound Settings** — menu item above quick actions
-- **Quick actions** row: Mute Sound · Mute Mic · Open Settings
+- **Quick actions** row: Mute Sound · Mute Mic · Open Settings (opens Sound Settings)
 
 **Expanded (output device list)**
 
 - Radio list of output devices with icons and subtitles
   - Built-in speakers, HDMI, USB DAC, Bluetooth (with battery %)
-- **Sound Settings** — menu item above quick actions
-- **Quick actions** row: Mute Sound · Mute Mic · Open Settings
+- **Quick actions** row: Mute Sound · Mute Mic · Open Settings (opens Sound Settings)
 
 ### Right click — applet management
 
@@ -95,4 +93,3 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |
 | Applications / per-app volume (incl. media controls) | Planned |
-| Sound Settings link | Planned |
