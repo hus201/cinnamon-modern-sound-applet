@@ -245,8 +245,8 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
         if (active) {
             this._nameLabel.text = active.description || _("Unknown device");
-            this._subtitleLabel.text = active.origin || "";
-            this._subtitleLabel.visible = !!active.origin;
+            this._subtitleLabel.text = _("Output device");
+            this._subtitleLabel.visible = true;
             applyDeviceIcon(this._deviceIcon, active);
         } else {
             this._nameLabel.text = _("No output device");

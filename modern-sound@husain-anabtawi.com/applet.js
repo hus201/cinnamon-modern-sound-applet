@@ -11,6 +11,13 @@ const { OutputDeviceItem } = require("./widgets/outputDeviceItem");
 const { ApplicationsItem } = require("./widgets/applicationsItem");
 const { QuickActionsItem } = require("./widgets/quickActionsItem");
 
+function addSectionSeparator(menu) {
+    const separator = new PopupMenu.PopupSeparatorMenuItem();
+    separator.actor.add_style_class_name("modern-sound-separator");
+    menu.addMenuItem(separator);
+    return separator;
+}
+
 class ModernSoundApplet extends Applet.IconApplet {
     constructor(metadata, orientation, panelHeight, instanceId) {
         super(orientation, panelHeight, instanceId);
@@ -43,6 +50,8 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._micVolume = new MicVolumeItem(this);
         this._menu.addMenuItem(this._micVolume);
 
+        addSectionSeparator(this._menu);
+
         this._outputDevice = new OutputDeviceItem(this);
         this._outputDevice.bindControl(this._control);
         this._menu.addMenuItem(this._outputDevice);
@@ -51,9 +60,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._applications.bindControl(this._control);
         this._menu.addMenuItem(this._applications);
 
-        this._separator = new PopupMenu.PopupSeparatorMenuItem();
-        this._separator.actor.add_style_class_name("modern-sound-separator");
-        this._menu.addMenuItem(this._separator);
+        addSectionSeparator(this._menu);
 
         this._quickActions = new QuickActionsItem(this);
         this._menu.addMenuItem(this._quickActions);

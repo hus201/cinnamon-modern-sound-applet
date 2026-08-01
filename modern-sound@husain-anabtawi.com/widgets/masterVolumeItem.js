@@ -14,13 +14,13 @@ class MasterVolumeItem extends PopupMenu.PopupBaseMenuItem {
         super({ activate: false, hover: false });
         this._applet = applet;
         this._updating = false;
-        this.actor.add_style_class_name("modern-sound-volume-item");
+        this.actor.add_style_class_name("modern-sound-level-item");
 
         this._icon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "xsi-audio-volume-muted",
             icon_size: 16,
-            style_class: "modern-sound-volume-icon",
+            style_class: "modern-sound-level-icon",
             reactive: true,
             track_hover: true
         });

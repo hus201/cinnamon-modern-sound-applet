@@ -218,6 +218,7 @@ if (outputItem) {
     assertEqual(outputItem._devices.length, 2, "tracks two output devices");
     assert(outputItem._chevron.visible === true, "shows chevron with multiple devices");
     assertEqual(outputItem._nameLabel.text, "Built-in Audio", "header shows active device");
+    assertEqual(outputItem._subtitleLabel.text, "Output device", "header shows output device label");
 
     outputItem._syncActiveDevice();
     const activeRow = outputItem._devices.find((entry) => entry.id === 0);
@@ -341,7 +342,7 @@ try {
     assert(instance._outputDevice !== undefined, "applet has output device switcher");
     assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 6, "menu has volume, mic, output, apps, separator, and actions");
+    assert(instance._menu._items.length >= 7, "menu has volume, mic, separators, output, apps, and actions");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);
