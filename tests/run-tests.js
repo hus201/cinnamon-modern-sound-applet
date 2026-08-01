@@ -90,6 +90,16 @@ if (volumeItem) {
     assert(stream.is_muted === false, "dragging up unmutes");
 }
 
+section("MasterVolumeItem icon mute toggle");
+if (volumeItem) {
+    const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+    volumeItem.connectStream(stream);
+    volumeItem._icon.emit("button-press-event", { get_button: () => 1 });
+    assert(stream.is_muted === true, "icon click mutes");
+    volumeItem._icon.emit("button-press-event", { get_button: () => 1 });
+    assert(stream.is_muted === false, "icon click again unmutes");
+}
+
 section("QuickActionsItem construction");
 try {
     const actions = new QuickActionsItem(createMockApplet());

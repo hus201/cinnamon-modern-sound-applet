@@ -20,7 +20,16 @@ class MasterVolumeItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "xsi-audio-volume-muted",
             icon_size: 16,
-            style_class: "modern-sound-volume-icon"
+            style_class: "modern-sound-volume-icon",
+            reactive: true,
+            track_hover: true
+        });
+        this._icon.connect("button-press-event", (_actor, event) => {
+            if (this._stream && event.get_button() === 1) {
+                this._stream.change_is_muted(!this._stream.is_muted);
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
         });
 
         this._slider = new Slider.Slider(0);

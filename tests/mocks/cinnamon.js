@@ -254,6 +254,17 @@ function setupCinnamonMocks() {
                     constructor(params) {
                         Object.assign(this, params);
                         this.actor = createActor("icon");
+                        this._handlers = {};
+                    }
+
+                    connect(signal, handler) {
+                        this._handlers[signal] = handler;
+                        return 1;
+                    }
+
+                    emit(signal, ...args) {
+                        if (this._handlers[signal])
+                            return this._handlers[signal](this, ...args);
                     }
                 },
                 Label: class {

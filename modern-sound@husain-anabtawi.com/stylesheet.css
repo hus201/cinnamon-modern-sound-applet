@@ -9,6 +9,13 @@
 .modern-sound-volume-icon {
     icon-size: 16px;
     color: #e8eaed;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.modern-sound-volume-icon:hover {
+    color: #c8daff;
+    background-color: rgba(138, 180, 248, 0.14);
 }
 
 .modern-sound-volume-row {
