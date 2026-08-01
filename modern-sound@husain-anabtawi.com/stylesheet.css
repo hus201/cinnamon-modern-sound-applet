@@ -6,6 +6,84 @@
     padding: 12px 14px 8px;
 }
 
+.modern-sound-output-item {
+    padding: 2px 14px 8px;
+}
+
+.modern-sound-output-item:hover,
+.modern-sound-output-item:focus {
+    background-color: transparent;
+}
+
+.modern-sound-output-header {
+    spacing: 10px;
+    padding: 6px 0;
+    border-radius: 8px;
+}
+
+.modern-sound-output-header:hover {
+    background-color: rgba(138, 180, 248, 0.08);
+}
+
+.modern-sound-output-header-icon {
+    icon-size: 18px;
+    color: #e8eaed;
+}
+
+.modern-sound-output-name {
+    font-weight: 600;
+    color: #e8eaed;
+}
+
+.modern-sound-output-subtitle {
+    font-size: 0.82em;
+    color: #9aa0a6;
+}
+
+.modern-sound-output-chevron {
+    icon-size: 14px;
+    color: #9aa0a6;
+}
+
+.modern-sound-output-list {
+    padding-left: 8px;
+}
+
+.modern-sound-output-row {
+    spacing: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+.modern-sound-output-row:hover {
+    background-color: rgba(138, 180, 248, 0.1);
+}
+
+.modern-sound-output-row.active {
+    background-color: rgba(138, 180, 248, 0.14);
+}
+
+.modern-sound-output-radio,
+.modern-sound-output-check {
+    icon-size: 14px;
+    color: #8ab4f8;
+}
+
+.modern-sound-output-row-icon {
+    icon-size: 16px;
+    color: #e8eaed;
+}
+
+.modern-sound-output-row-name {
+    font-weight: 500;
+    color: #e8eaed;
+}
+
+.modern-sound-output-row-subtitle {
+    font-size: 0.82em;
+    color: #9aa0a6;
+}
+
 .modern-sound-volume-icon {
     icon-size: 16px;
     color: #e8eaed;

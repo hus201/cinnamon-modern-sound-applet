@@ -8,7 +8,7 @@ const vm = require("vm");
 const ROOT = path.resolve(__dirname, "..");
 const APPLET_DIR = path.join(ROOT, "modern-sound@husain-anabtawi.com");
 
-const { setupCinnamonMocks, createMockStream } = require("./mocks/cinnamon");
+const { setupCinnamonMocks, createMockStream, createMockOutput } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
 const cinnamonImports = globalThis.imports;
@@ -69,15 +69,30 @@ function section(title) {
 }
 
 const { volumeIconName } = loadModule("widgets/volume.js");
+const { deviceDisplayIcon } = loadModule("widgets/deviceDisplay.js");
 const { MasterVolumeItem } = loadModule("widgets/masterVolumeItem.js");
+const { OutputDeviceItem } = loadModule("widgets/outputDeviceItem.js");
 const { QuickActionsItem } = loadModule("widgets/quickActionsItem.js");
 
-function createMockApplet() {
+function createMockApplet(output) {
     return {
         _volumeNorm: 65536,
+        _output: output || null,
         _updatePanelIcon() {}
     };
 }
+
+function createMockControl() {
+    return new cinnamonImports.gi.Cvc.MixerControl({ name: "test" });
+}
+
+section("deviceDisplayIcon");
+assertEqual(
+    deviceDisplayIcon({ get_icon_name: () => "audio-headphones-symbolic" }),
+    "audio-headphones-symbolic",
+    "uses device icon name"
+);
+assertEqual(deviceDisplayIcon({}), "audio-card-symbolic", "falls back to audio-card");
 
 section("volumeIconName");
 assertEqual(volumeIconName(0, true), "xsi-audio-volume-muted", "muted");
@@ -129,6 +144,65 @@ if (volumeItem) {
     assert(stream.is_muted === false, "icon click again unmutes");
 }
 
+section("OutputDeviceItem construction");
+let outputItem;
+try {
+    outputItem = new OutputDeviceItem(createMockApplet());
+    assert(outputItem._nameLabel !== undefined, "creates device name label");
+    assert(outputItem._chevron !== undefined, "creates chevron");
+    assertEqual(outputItem._nameLabel.text, "No output device", "default name when no output");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ OutputDeviceItem construction threw: ${e.message}`);
+}
+
+section("OutputDeviceItem device list");
+if (outputItem) {
+    const builtIn = createMockOutput(0, "Built-in Audio", "Analog Stereo");
+    const hdmi = createMockOutput(1, "HDMI / DisplayPort", "Digital Stereo (HDMI)");
+    const control = createMockControl();
+    const applet = createMockApplet(builtIn);
+
+    outputItem = new OutputDeviceItem(applet);
+    outputItem.bindControl(control);
+    control.addOutput(0, builtIn);
+    control.addOutput(1, hdmi);
+
+    assertEqual(outputItem._devices.length, 2, "tracks two output devices");
+    assert(outputItem._chevron.visible === true, "shows chevron with multiple devices");
+    assertEqual(outputItem._nameLabel.text, "Built-in Audio", "header shows active device");
+
+    outputItem._syncActiveDevice();
+    const activeRow = outputItem._devices.find((entry) => entry.id === 0);
+    assert(activeRow !== undefined, "finds active device row");
+    assertEqual(activeRow.row._radio.icon_name, "radio-checked-symbolic", "marks active row");
+
+    const hdmiRow = outputItem._devices.find((entry) => entry.id === 1);
+    assertEqual(hdmiRow.row._radio.icon_name, "radio-off-symbolic", "inactive row is off");
+
+    hdmiRow.row.emit("button-press-event", { get_button: () => 1 });
+    assert(control._activeOutput === hdmi, "row click switches output");
+    assertEqual(control._activeOutput.description, "HDMI / DisplayPort", "active output updated");
+
+    outputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(outputItem._listBox.visible === true, "header expands device list");
+    outputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(outputItem._listBox.visible === false, "header collapses device list");
+}
+
+section("OutputDeviceItem single device");
+try {
+    const device = createMockOutput(0, "USB DAC", "Analog Stereo");
+    const control = createMockControl();
+    const item = new OutputDeviceItem(createMockApplet(device));
+    item.bindControl(control);
+    control.addOutput(0, device);
+    assert(item._chevron.visible === false, "hides chevron with one device");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ OutputDeviceItem single device threw: ${e.message}`);
+}
+
 section("QuickActionsItem construction");
 try {
     const actions = new QuickActionsItem(createMockApplet());
@@ -152,8 +226,9 @@ try {
     const instance = appletModule.main(metadata, 3, 32, 1);
     assert(instance != null, "main() returns applet instance");
     assert(instance._masterVolume !== undefined, "applet has master volume");
+    assert(instance._outputDevice !== undefined, "applet has output device switcher");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 3, "menu has volume, separator, and actions");
+    assert(instance._menu._items.length >= 4, "menu has volume, output, separator, and actions");
 } catch (e) {
     failed++;
     console.error(`  ✗ applet.js smoke test threw: ${e.message}`);

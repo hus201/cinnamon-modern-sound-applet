@@ -42,10 +42,17 @@ function createActor(name) {
             return [0, 24];
         },
         queue_repaint() {},
-        connect() {
+        connect(signal, handler) {
+            this._handlers = this._handlers || {};
+            this._handlers[signal] = handler;
             return 1;
         },
         disconnect() {},
+        emit(signal, ...args) {
+            if (this._handlers && this._handlers[signal])
+                return this._handlers[signal](this, ...args);
+        },
+        destroy() {},
         change_style_pseudo_class() {},
         get_direction() {
             return 0;
@@ -253,6 +260,8 @@ function setupCinnamonMocks() {
                 Icon: class {
                     constructor(params) {
                         Object.assign(this, params);
+                        this.visible = params.visible !== false;
+                        this.opacity = params.opacity !== undefined ? params.opacity : 255;
                         this.actor = createActor("icon");
                         this._handlers = {};
                     }
@@ -273,7 +282,9 @@ function setupCinnamonMocks() {
                         this.style_class = params.style_class;
                         this.x_align = params.x_align;
                         this.y_align = params.y_align;
-                        this.clutterText = { ellipsize: 0 };
+                        this.visible = params.visible !== false;
+                        this.clutter_text = { ellipsize: 0 };
+                        this.clutterText = this.clutter_text;
                         this.actor = createActor("label");
                     }
                 },
@@ -281,6 +292,10 @@ function setupCinnamonMocks() {
                     constructor(params) {
                         Object.assign(this, params || {});
                         this._children = [];
+                        this._handlers = {};
+                        this.visible = params && params.visible !== undefined ?
+                            params.visible :
+                            true;
                     }
 
                     add_actor(child) {
@@ -290,6 +305,27 @@ function setupCinnamonMocks() {
                     add(child, params) {
                         this._children.push({ child, params });
                     }
+
+                    remove_actor(child) {
+                        this._children = this._children.filter((entry) => {
+                            if (entry && entry.child)
+                                return entry.child !== child;
+                            return entry !== child;
+                        });
+                    }
+
+                    connect(signal, handler) {
+                        this._handlers[signal] = handler;
+                        return 1;
+                    }
+
+                    emit(signal, ...args) {
+                        if (this._handlers[signal])
+                            return this._handlers[signal](this, ...args);
+                    }
+
+                    destroy() {}
+                    change_style_pseudo_class() {}
                 },
                 Table: class {
                     constructor(params) {
@@ -345,6 +381,10 @@ function setupCinnamonMocks() {
                     constructor() {
                         this._state = 1;
                         this._handlers = {};
+                        this._handlerIds = {};
+                        this._nextHandlerId = 1;
+                        this._outputs = {};
+                        this._activeOutput = null;
                     }
 
                     get_vol_max_norm() {
@@ -363,20 +403,57 @@ function setupCinnamonMocks() {
 
                     connect(signal, handler) {
                         this._handlers[signal] = handler;
-                        return 1;
+                        const id = this._nextHandlerId++;
+                        this._handlerIds[id] = signal;
+                        return id;
+                    }
+
+                    disconnect(id) {
+                        const signal = this._handlerIds[id];
+                        if (signal) {
+                            delete this._handlers[signal];
+                            delete this._handlerIds[id];
+                        }
+                    }
+
+                    lookup_output_id(id) {
+                        return this._outputs[id] || null;
+                    }
+
+                    change_output(device) {
+                        this._activeOutput = device;
+                        this._emit("active-output-update");
+                    }
+
+                    addOutput(id, device) {
+                        this._outputs[id] = device;
+                        this._emit("output-added", id);
+                    }
+
+                    removeOutput(id) {
+                        delete this._outputs[id];
+                        this._emit("output-removed", id);
                     }
 
                     get_default_sink() {
-                        return createMockStream();
+                        if (this._activeOutput)
+                            return this._activeOutput;
+                        const ids = Object.keys(this._outputs);
+                        if (ids.length > 0)
+                            return this._outputs[ids[0]];
+                        return createMockStream({
+                            description: "Built-in Audio",
+                            origin: "Analog Stereo"
+                        });
                     }
 
                     get_default_source() {
                         return createMockStream({ is_muted: false });
                     }
 
-                    _emit(signal) {
+                    _emit(signal, ...args) {
                         if (this._handlers[signal])
-                            this._handlers[signal]();
+                            this._handlers[signal](this, ...args);
                     }
                 }
             },
@@ -412,13 +489,20 @@ function setupCinnamonMocks() {
 function createMockStream({
     volume = 32768,
     volume_max = 65536,
-    is_muted = false
+    is_muted = false,
+    description = "",
+    origin = ""
 } = {}) {
     const handlers = {};
     return {
         volume,
         volume_max,
         is_muted,
+        description,
+        origin,
+        get_icon_name() {
+            return "audio-card-symbolic";
+        },
         connect(signal, handler) {
             handlers[signal] = handler;
             return Object.keys(handlers).length;
@@ -433,4 +517,20 @@ function createMockStream({
     };
 }
 
-module.exports = { setupCinnamonMocks, createMockStream, createActor };
+function createMockOutput(id, description, origin, iconName) {
+    return {
+        index: id,
+        description,
+        origin,
+        get_icon_name() {
+            return iconName || "audio-card-symbolic";
+        }
+    };
+}
+
+module.exports = {
+    setupCinnamonMocks,
+    createMockStream,
+    createMockOutput,
+    createActor
+};

@@ -6,6 +6,7 @@ const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
 const { MasterVolumeItem } = require("./widgets/masterVolumeItem");
+const { OutputDeviceItem } = require("./widgets/outputDeviceItem");
 const { QuickActionsItem } = require("./widgets/quickActionsItem");
 
 class ModernSoundApplet extends Applet.IconApplet {
@@ -36,6 +37,10 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._masterVolume = new MasterVolumeItem(this);
         this._menu.addMenuItem(this._masterVolume);
+
+        this._outputDevice = new OutputDeviceItem(this);
+        this._outputDevice.bindControl(this._control);
+        this._menu.addMenuItem(this._outputDevice);
 
         this._separator = new PopupMenu.PopupSeparatorMenuItem();
         this._separator.actor.add_style_class_name("modern-sound-separator");
@@ -70,6 +75,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._input = this._control.get_default_source();
 
         this._masterVolume.connectStream(this._output);
+        this._outputDevice._syncActiveDevice();
 
         if (this._output) {
             this._outputMutedId = this._output.connect("notify::is-muted", () => {
