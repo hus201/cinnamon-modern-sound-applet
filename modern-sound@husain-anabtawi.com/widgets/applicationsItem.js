@@ -1,6 +1,7 @@
 const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Cvc = imports.gi.Cvc;
+const Pango = imports.gi.Pango;
 
 const { AppStreamItem } = require("./widgets/appStreamItem");
 
@@ -21,7 +22,9 @@ class ApplicationsItem extends PopupMenu.PopupMenuSection {
             text: _("Applications"),
             style_class: "modern-sound-applications-title"
         });
-        this._headerItem.addActor(this._headerLabel);
+        if (this._headerLabel.clutter_text)
+            this._headerLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._headerItem.addActor(this._headerLabel, { span: -1, expand: true });
         this.addMenuItem(this._headerItem);
 
         this.actor.visible = false;
