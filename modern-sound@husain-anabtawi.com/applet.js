@@ -6,6 +6,7 @@ const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
 const { MasterVolumeItem } = require("./widgets/masterVolumeItem");
+const { MicVolumeItem } = require("./widgets/micVolumeItem");
 const { OutputDeviceItem } = require("./widgets/outputDeviceItem");
 const { ApplicationsItem } = require("./widgets/applicationsItem");
 const { QuickActionsItem } = require("./widgets/quickActionsItem");
@@ -38,6 +39,9 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._masterVolume = new MasterVolumeItem(this);
         this._menu.addMenuItem(this._masterVolume);
+
+        this._micVolume = new MicVolumeItem(this);
+        this._menu.addMenuItem(this._micVolume);
 
         this._outputDevice = new OutputDeviceItem(this);
         this._outputDevice.bindControl(this._control);
@@ -75,11 +79,14 @@ class ModernSoundApplet extends Applet.IconApplet {
             this._output.disconnect(this._outputVolumeId);
         if (this._input && this._inputMutedId)
             this._input.disconnect(this._inputMutedId);
+        if (this._input && this._inputVolumeId)
+            this._input.disconnect(this._inputVolumeId);
 
         this._output = this._control.get_default_sink();
         this._input = this._control.get_default_source();
 
         this._masterVolume.connectStream(this._output);
+        this._micVolume.connectStream(this._input);
         this._outputDevice._syncActiveDevice();
 
         if (this._output) {
@@ -90,8 +97,14 @@ class ModernSoundApplet extends Applet.IconApplet {
             this._outputVolumeId = this._output.connect("notify::volume", () => this._updatePanelIcon());
         }
 
-        if (this._input)
-            this._inputMutedId = this._input.connect("notify::is-muted", () => this._syncMuteStates());
+        if (this._input) {
+            this._inputMutedId = this._input.connect("notify::is-muted", () => {
+                this._syncMuteStates();
+            });
+            this._inputVolumeId = this._input.connect("notify::volume", () => {
+                this._micVolume._sync();
+            });
+        }
 
         this._syncMuteStates();
         this._updatePanelIcon();

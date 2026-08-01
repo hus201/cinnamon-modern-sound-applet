@@ -11,6 +11,7 @@ A modern Cinnamon panel sound applet — compact by default, expandable when nee
 **Compact (default)**
 
 - Master volume slider with percentage (e.g. 78%)
+- Mic volume slider with percentage
 - Output device row (current device + chevron to expand)
 - **Applications** section — per-app volume and media controls
   - Simple apps: icon + mini slider (e.g. Firefox)
@@ -48,6 +49,7 @@ modern-sound@husain-anabtawi.com/
 │   ├── volume.js
 │   ├── deviceDisplay.js
 │   ├── masterVolumeItem.js
+│   ├── micVolumeItem.js
 │   ├── outputDeviceItem.js
 │   ├── appDisplay.js
 │   ├── appStreamItem.js
@@ -93,6 +95,7 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Block | Status |
 |-------|--------|
 | Master volume slider + percentage | Done |
+| Mic volume slider + percentage | Done |
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |
 | Applications / per-app volume | Done |

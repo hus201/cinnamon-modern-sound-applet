@@ -15,9 +15,10 @@ imports.searchPath.unshift(APPLET_DIR);
 const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStream } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
-const { volumeIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
+const { volumeIconName, micIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
 const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/deviceDisplay");
 const { MasterVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/masterVolumeItem");
+const { MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/micVolumeItem");
 const { OutputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/outputDeviceItem");
 const { ApplicationsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/applicationsItem");
 const { AppStreamItem } = require("./../modern-sound@husain-anabtawi.com/widgets/appStreamItem");
@@ -50,6 +51,7 @@ function createMockApplet(output) {
         _volumeNorm: 65536,
         _output: output || null,
         _updatePanelIcon() {},
+        _syncMuteStates() {},
         toggleSoundMute() {},
         toggleInputMute() {},
         openSettings() {}
@@ -95,6 +97,12 @@ assertEqual(volumeIconName(0.1, false), "xsi-audio-volume-low", "low");
 assertEqual(volumeIconName(0.5, false), "xsi-audio-volume-medium", "medium");
 assertEqual(volumeIconName(0.9, false), "xsi-audio-volume-high", "high");
 
+section("micIconName");
+assertEqual(micIconName(0, true), "xsi-microphone-sensitivity-muted", "mic muted");
+assertEqual(micIconName(0.1, false), "xsi-microphone-sensitivity-low", "mic low");
+assertEqual(micIconName(0.5, false), "xsi-microphone-sensitivity-medium", "mic medium");
+assertEqual(micIconName(0.9, false), "xsi-microphone-sensitivity-high", "mic high");
+
 section("MasterVolumeItem construction");
 let volumeItem;
 try {
@@ -137,6 +145,50 @@ if (volumeItem) {
     assert(stream.is_muted === true, "icon click mutes");
     volumeItem._icon.emit("button-press-event", { get_button: () => 1 });
     assert(stream.is_muted === false, "icon click again unmutes");
+}
+
+section("MicVolumeItem construction");
+let micItem;
+try {
+    micItem = new MicVolumeItem(createMockApplet());
+    assert(micItem._percentLabel !== undefined, "creates mic percent label");
+    assert(micItem._slider !== undefined, "creates mic slider");
+    assert(micItem._icon !== undefined, "creates mic icon");
+    assertEqual(micItem._percentLabel.text, "0%", "mic default percent is 0%");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ MicVolumeItem construction threw: ${e}`);
+}
+
+section("MicVolumeItem sync");
+if (micItem) {
+    const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+    micItem.connectStream(stream);
+    assertEqual(micItem._percentLabel.text, "50%", "mic sync shows 50% at half volume");
+    assertEqual(micItem._icon.icon_name, "xsi-microphone-sensitivity-medium", "mic sync picks medium icon");
+
+    stream.is_muted = true;
+    micItem._sync();
+    assertEqual(micItem._percentLabel.text, "0%", "mic sync shows 0% when muted");
+}
+
+section("MicVolumeItem value change");
+if (micItem) {
+    const stream = createMockStream({ volume: 0, volume_max: 65536, is_muted: true });
+    micItem.connectStream(stream);
+    micItem._onChanged(0.5);
+    assertEqual(micItem._percentLabel.text, "50%", "mic dragging to 50% updates label");
+    assert(stream.is_muted === false, "mic dragging up unmutes");
+}
+
+section("MicVolumeItem icon mute toggle");
+if (micItem) {
+    const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+    micItem.connectStream(stream);
+    micItem._icon.emit("button-press-event", { get_button: () => 1 });
+    assert(stream.is_muted === true, "mic icon click mutes");
+    micItem._icon.emit("button-press-event", { get_button: () => 1 });
+    assert(stream.is_muted === false, "mic icon click again unmutes");
 }
 
 section("OutputDeviceItem construction");
@@ -285,10 +337,11 @@ try {
     const instance = appletModule.main(metadata, 3, 32, 1);
     assert(instance !== null && instance !== undefined, "main() returns applet instance");
     assert(instance._masterVolume !== undefined, "applet has master volume");
+    assert(instance._micVolume !== undefined, "applet has mic volume");
     assert(instance._outputDevice !== undefined, "applet has output device switcher");
     assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 5, "menu has volume, output, apps, separator, and actions");
+    assert(instance._menu._items.length >= 6, "menu has volume, mic, output, apps, separator, and actions");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);

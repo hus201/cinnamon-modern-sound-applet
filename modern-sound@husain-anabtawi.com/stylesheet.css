@@ -6,6 +6,22 @@
     padding: 12px 14px 8px;
 }
 
+.modern-sound-mic-item {
+    padding: 4px 14px 8px;
+}
+
+.modern-sound-mic-icon {
+    icon-size: 16px;
+    color: #e8eaed;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.modern-sound-mic-icon:hover {
+    color: #c8daff;
+    background-color: rgba(138, 180, 248, 0.14);
+}
+
 .modern-sound-output-item {
     padding: 2px 14px 8px;
 }
