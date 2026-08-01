@@ -533,6 +533,7 @@ function setupCinnamonMocks() {
         },
         misc: {
             util: {
+                spawn() {},
                 spawnCommandLine() {}
             }
         }
