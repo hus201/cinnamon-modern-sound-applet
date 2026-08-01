@@ -3,7 +3,7 @@ const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Pango = imports.gi.Pango;
 
-const { applyDeviceIcon, DEVICE_FALLBACK_ICON } = require("./widgets/deviceDisplay");
+const { applyDeviceIcon, DEVICE_FALLBACK_ICON } = require("./widgets/device-display");
 
 // Max width for the collapsed device header labels only (not the expanded list).
 const HEADER_LABEL_MAX = 210;

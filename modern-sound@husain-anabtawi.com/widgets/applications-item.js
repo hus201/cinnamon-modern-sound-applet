@@ -3,7 +3,7 @@ const St = imports.gi.St;
 const Cvc = imports.gi.Cvc;
 const Pango = imports.gi.Pango;
 
-const { AppStreamItem } = require("./widgets/appStreamItem");
+const { AppStreamItem } = require("./widgets/app-stream-item");
 
 class ApplicationsItem extends PopupMenu.PopupMenuSection {
     constructor(applet) {

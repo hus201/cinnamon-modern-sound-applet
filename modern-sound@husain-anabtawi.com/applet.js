@@ -5,11 +5,11 @@ const Main = imports.ui.main;
 const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
-const { MasterVolumeItem } = require("./widgets/masterVolumeItem");
-const { MicVolumeItem } = require("./widgets/micVolumeItem");
-const { OutputDeviceItem } = require("./widgets/outputDeviceItem");
-const { ApplicationsItem } = require("./widgets/applicationsItem");
-const { QuickActionsItem } = require("./widgets/quickActionsItem");
+const { MasterVolumeItem } = require("./widgets/master-volume-item");
+const { MicVolumeItem } = require("./widgets/mic-volume-item");
+const { OutputDeviceItem } = require("./widgets/output-device-item");
+const { ApplicationsItem } = require("./widgets/applications-item");
+const { QuickActionsItem } = require("./widgets/quick-actions-item");
 
 function addSectionSeparator(menu) {
     const separator = new PopupMenu.PopupSeparatorMenuItem();

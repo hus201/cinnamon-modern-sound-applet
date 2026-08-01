@@ -47,14 +47,14 @@ modern-sound@husain-anabtawi.com/
 ├── applet.js              # Main applet logic
 ├── widgets/               # Custom menu widgets
 │   ├── volume.js
-│   ├── deviceDisplay.js
-│   ├── masterVolumeItem.js
-│   ├── micVolumeItem.js
-│   ├── outputDeviceItem.js
-│   ├── appDisplay.js
-│   ├── appStreamItem.js
-│   ├── applicationsItem.js
-│   └── quickActionsItem.js
+│   ├── device-display.js
+│   ├── master-volume-item.js
+│   ├── mic-volume-item.js
+│   ├── output-device-item.js
+│   ├── app-display.js
+│   ├── app-stream-item.js
+│   ├── applications-item.js
+│   └── quick-actions-item.js
 ├── metadata.json          # Applet identity (required)
 ├── settings-schema.json   # Configurable settings
 └── stylesheet.css         # Theming (dark, blue accents)

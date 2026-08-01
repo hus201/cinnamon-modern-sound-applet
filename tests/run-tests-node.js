@@ -69,14 +69,14 @@ function section(title) {
 }
 
 const { volumeIconName, micIconName } = loadModule("widgets/volume.js");
-const { applyDeviceIcon, deviceDisplayIcon } = loadModule("widgets/deviceDisplay.js");
-const { MasterVolumeItem } = loadModule("widgets/masterVolumeItem.js");
-const { MicVolumeItem } = loadModule("widgets/micVolumeItem.js");
-const { OutputDeviceItem } = loadModule("widgets/outputDeviceItem.js");
-const { ApplicationsItem } = loadModule("widgets/applicationsItem.js");
-const { AppStreamItem } = loadModule("widgets/appStreamItem.js");
-const { appStreamLabel, applyAppStreamIcon } = loadModule("widgets/appDisplay.js");
-const { QuickActionsItem } = loadModule("widgets/quickActionsItem.js");
+const { applyDeviceIcon, deviceDisplayIcon } = loadModule("widgets/device-display.js");
+const { MasterVolumeItem } = loadModule("widgets/master-volume-item.js");
+const { MicVolumeItem } = loadModule("widgets/mic-volume-item.js");
+const { OutputDeviceItem } = loadModule("widgets/output-device-item.js");
+const { ApplicationsItem } = loadModule("widgets/applications-item.js");
+const { AppStreamItem } = loadModule("widgets/app-stream-item.js");
+const { appStreamLabel, applyAppStreamIcon } = loadModule("widgets/app-display.js");
+const { QuickActionsItem } = loadModule("widgets/quick-actions-item.js");
 
 function createMockApplet(output) {
     return {

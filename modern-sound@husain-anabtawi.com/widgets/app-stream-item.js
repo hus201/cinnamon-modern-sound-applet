@@ -5,7 +5,7 @@ const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Pango = imports.gi.Pango;
 
-const { appStreamLabel, applyAppStreamIcon } = require("./widgets/appDisplay");
+const { appStreamLabel, applyAppStreamIcon } = require("./widgets/app-display");
 
 const APP_SLIDER_WIDTH = 96;
 const APP_SLIDER_HEIGHT = 18;
