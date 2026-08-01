@@ -49,6 +49,9 @@ modern-sound@husain-anabtawi.com/
 │   ├── deviceDisplay.js
 │   ├── masterVolumeItem.js
 │   ├── outputDeviceItem.js
+│   ├── appDisplay.js
+│   ├── appStreamItem.js
+│   ├── applicationsItem.js
 │   └── quickActionsItem.js
 ├── metadata.json          # Applet identity (required)
 ├── settings-schema.json   # Configurable settings
@@ -92,4 +95,5 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Master volume slider + percentage | Done |
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |
-| Applications / per-app volume (incl. media controls) | Planned |
+| Applications / per-app volume | Done |
+| Media player controls (MPRIS) | Planned |

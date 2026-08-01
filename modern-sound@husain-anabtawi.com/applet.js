@@ -7,6 +7,7 @@ const Cvc = imports.gi.Cvc;
 
 const { MasterVolumeItem } = require("./widgets/masterVolumeItem");
 const { OutputDeviceItem } = require("./widgets/outputDeviceItem");
+const { ApplicationsItem } = require("./widgets/applicationsItem");
 const { QuickActionsItem } = require("./widgets/quickActionsItem");
 
 class ModernSoundApplet extends Applet.IconApplet {
@@ -41,6 +42,10 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._outputDevice = new OutputDeviceItem(this);
         this._outputDevice.bindControl(this._control);
         this._menu.addMenuItem(this._outputDevice);
+
+        this._applications = new ApplicationsItem(this);
+        this._applications.bindControl(this._control);
+        this._menu.addMenuItem(this._applications);
 
         this._separator = new PopupMenu.PopupSeparatorMenuItem();
         this._separator.actor.add_style_class_name("modern-sound-separator");

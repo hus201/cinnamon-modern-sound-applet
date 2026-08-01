@@ -12,13 +12,16 @@ const APPLET_DIR = GLib.build_filenamev([REPO_ROOT, "modern-sound@husain-anabtaw
 imports.searchPath.unshift(REPO_ROOT);
 imports.searchPath.unshift(APPLET_DIR);
 
-const { setupCinnamonMocks, createMockStream, createMockOutput } = require("./mocks/cinnamon");
+const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStream } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
 const { volumeIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
 const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/deviceDisplay");
 const { MasterVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/masterVolumeItem");
 const { OutputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/outputDeviceItem");
+const { ApplicationsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/applicationsItem");
+const { AppStreamItem } = require("./../modern-sound@husain-anabtawi.com/widgets/appStreamItem");
+const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/appDisplay");
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quickActionsItem");
 
 let passed = 0;
@@ -195,6 +198,70 @@ try {
     printerr(`  ✗ OutputDeviceItem single device threw: ${e}`);
 }
 
+section("appStreamLabel");
+assertEqual(appStreamLabel({ name: "firefox" }), "Firefox", "capitalizes app name");
+
+section("applyAppStreamIcon");
+{
+    const icon = { gicon: null, icon_name: "", icon_type: null };
+    applyAppStreamIcon(icon, { name: "Firefox", icon_name: "audio" });
+    assertEqual(icon.icon_name, "firefox", "maps Firefox icon");
+    assertEqual(icon.icon_type, imports.gi.St.IconType.FULLCOLOR, "app icons use fullcolor");
+}
+
+section("AppStreamItem construction");
+let appItem;
+try {
+    const stream = createMockAppStream({ name: "Firefox", volume: 32768, volume_max: 65536 });
+    appItem = new AppStreamItem(createMockApplet(), stream);
+    assertEqual(appItem._nameLabel.text, "Firefox", "shows app name");
+    assertEqual(appItem._percentLabel.text, "50%", "shows stream volume");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ AppStreamItem construction threw: ${e}`);
+}
+
+section("AppStreamItem volume change");
+if (appItem) {
+    appItem._onChanged(0.25);
+    assertEqual(appItem._percentLabel.text, "25%", "dragging updates app percent");
+    assert(appItem._stream.is_muted === false, "dragging up unmutes app stream");
+}
+
+section("ApplicationsItem stream list");
+try {
+    const control = createMockControl();
+    const apps = new ApplicationsItem(createMockApplet());
+    apps.bindControl(control);
+    assert(apps.actor.visible === false, "hidden with no playing apps");
+
+    control.addStream(1, createMockAppStream({ name: "Firefox" }));
+    control.addStream(2, createMockAppStream({ name: "Spotify", icon_name: "spotify" }));
+    assertEqual(apps._streams.length, 2, "tracks two app streams");
+    assert(apps.actor.visible === true, "shows section when apps are playing");
+
+    control.removeStream(1);
+    control.removeStream(2);
+    assertEqual(apps._streams.length, 0, "removes app streams");
+    assert(apps.actor.visible === false, "hides section when empty");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ ApplicationsItem stream list threw: ${e}`);
+}
+
+section("ApplicationsItem filters streams");
+try {
+    const control = createMockControl();
+    const apps = new ApplicationsItem(createMockApplet());
+    apps.bindControl(control);
+    const virtualStream = createMockAppStream({ name: "Virtual", is_virtual: true });
+    control.addStream(9, virtualStream);
+    assertEqual(apps._streams.length, 0, "ignores virtual streams");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ ApplicationsItem filters streams threw: ${e}`);
+}
+
 section("QuickActionsItem construction");
 try {
     const actions = new QuickActionsItem(createMockApplet());
@@ -219,8 +286,9 @@ try {
     assert(instance !== null && instance !== undefined, "main() returns applet instance");
     assert(instance._masterVolume !== undefined, "applet has master volume");
     assert(instance._outputDevice !== undefined, "applet has output device switcher");
+    assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 4, "menu has volume, output, separator, and actions");
+    assert(instance._menu._items.length >= 5, "menu has volume, output, apps, separator, and actions");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);

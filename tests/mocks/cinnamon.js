@@ -15,6 +15,7 @@ function createActor(name) {
         track_hover: true,
         text: "",
         icon_name: "",
+        visible: true,
         width: 0,
         height: 24,
         set_size(w, h) {
@@ -42,6 +43,12 @@ function createActor(name) {
             return [0, 24];
         },
         queue_repaint() {},
+        hide() {
+            this.visible = false;
+        },
+        show() {
+            this.visible = true;
+        },
         connect(signal, handler) {
             this._handlers = this._handlers || {};
             this._handlers[signal] = handler;
@@ -89,6 +96,21 @@ class PopupBaseMenuItem {
     }
 
     disconnectAll() {}
+
+    destroy() {
+        this.disconnectAll();
+    }
+}
+
+class PopupMenuSection {
+    constructor() {
+        this.actor = createActor("PopupMenuSection");
+        this._items = [];
+    }
+
+    addMenuItem(item) {
+        this._items.push(item);
+    }
 }
 
 class PopupSeparatorMenuItem extends PopupBaseMenuItem {
@@ -204,7 +226,11 @@ class AppletSettings {
     }
 }
 
+let MockMixerSinkInput;
+
 function setupCinnamonMocks() {
+    MockMixerSinkInput = class MixerSinkInput {};
+
     const StIconType = { SYMBOLIC: 1, FULLCOLOR: 2 };
 
     globalThis._ = (text) => text;
@@ -234,6 +260,7 @@ function setupCinnamonMocks() {
                 PopupBaseMenuItem,
                 PopupSeparatorMenuItem,
                 PopupSliderMenuItem,
+                PopupMenuSection,
                 PopupMenuManager
             },
             slider: {
@@ -391,6 +418,7 @@ function setupCinnamonMocks() {
             },
             Cvc: {
                 MixerControlState: { READY: 1 },
+                MixerSinkInput: MockMixerSinkInput,
                 MixerControl: class {
                     constructor() {
                         this._state = 1;
@@ -399,6 +427,7 @@ function setupCinnamonMocks() {
                         this._nextHandlerId = 1;
                         this._outputs = {};
                         this._activeOutput = null;
+                        this._streams = {};
                     }
 
                     get_vol_max_norm() {
@@ -447,6 +476,20 @@ function setupCinnamonMocks() {
                     removeOutput(id) {
                         delete this._outputs[id];
                         this._emit("output-removed", id);
+                    }
+
+                    lookup_stream_id(id) {
+                        return this._streams[id] || null;
+                    }
+
+                    addStream(id, stream) {
+                        this._streams[id] = stream;
+                        this._emit("stream-added", id);
+                    }
+
+                    removeStream(id) {
+                        delete this._streams[id];
+                        this._emit("stream-removed", id);
                     }
 
                     get_default_sink() {
@@ -542,9 +585,30 @@ function createMockOutput(id, description, origin, iconName) {
     };
 }
 
+function createMockAppStream({
+    name = "Firefox",
+    icon_name = "firefox",
+    volume = 32768,
+    volume_max = 65536,
+    is_muted = false,
+    application_id = "firefox",
+    is_virtual = false
+} = {}) {
+    const stream = createMockStream({ volume, volume_max, is_muted });
+    Object.assign(stream, {
+        name,
+        icon_name,
+        application_id,
+        is_virtual
+    });
+    Object.setPrototypeOf(stream, MockMixerSinkInput.prototype);
+    return stream;
+}
+
 module.exports = {
     setupCinnamonMocks,
     createMockStream,
     createMockOutput,
+    createMockAppStream,
     createActor
 };
