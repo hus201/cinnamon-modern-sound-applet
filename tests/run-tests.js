@@ -16,7 +16,7 @@ const { setupCinnamonMocks, createMockStream, createMockOutput } = require("./mo
 setupCinnamonMocks();
 
 const { volumeIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
-const { deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/deviceDisplay");
+const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/deviceDisplay");
 const { MasterVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/masterVolumeItem");
 const { OutputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/outputDeviceItem");
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quickActionsItem");
@@ -63,7 +63,28 @@ assertEqual(
     "audio-headphones-symbolic",
     "uses device icon name"
 );
-assertEqual(deviceDisplayIcon({}), "audio-card-symbolic", "falls back to audio-card");
+assertEqual(deviceDisplayIcon({}), "audio-speakers-symbolic", "falls back to speakers");
+
+section("applyDeviceIcon");
+{
+    const icon = { gicon: null, icon_name: "", icon_type: null };
+    const gicon = { name: "mock-gicon" };
+    applyDeviceIcon(icon, { get_gicon: () => gicon });
+    assert(icon.gicon === gicon, "uses device gicon when available");
+    assertEqual(icon.icon_type, imports.gi.St.IconType.FULLCOLOR, "gicon uses fullcolor");
+
+    applyDeviceIcon(icon, { get_icon_name: () => "video-display" });
+    assertEqual(icon.icon_name, "video-display", "uses non-symbolic icon name");
+    assertEqual(icon.icon_type, imports.gi.St.IconType.FULLCOLOR, "non-symbolic name uses fullcolor");
+
+    applyDeviceIcon(icon, { get_icon_name: () => "audio-headphones-symbolic" });
+    assertEqual(icon.icon_name, "audio-headphones-symbolic", "uses symbolic icon name");
+    assertEqual(icon.icon_type, imports.gi.St.IconType.SYMBOLIC, "symbolic name uses symbolic type");
+
+    applyDeviceIcon(icon, null);
+    assertEqual(icon.icon_name, "audio-speakers-symbolic", "null device uses speakers fallback");
+    assertEqual(icon.icon_type, imports.gi.St.IconType.SYMBOLIC, "fallback uses symbolic type");
+}
 
 section("volumeIconName");
 assertEqual(volumeIconName(0, true), "xsi-audio-volume-muted", "muted");

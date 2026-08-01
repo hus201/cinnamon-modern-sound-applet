@@ -260,6 +260,7 @@ function setupCinnamonMocks() {
                 Icon: class {
                     constructor(params) {
                         Object.assign(this, params);
+                        this.gicon = params.gicon || null;
                         this.visible = params.visible !== false;
                         this.opacity = params.opacity !== undefined ? params.opacity : 255;
                         this.actor = createActor("icon");

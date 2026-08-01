@@ -2,7 +2,7 @@ const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 
-const { deviceDisplayIcon } = require("./widgets/deviceDisplay");
+const { applyDeviceIcon, DEVICE_FALLBACK_ICON } = require("./widgets/deviceDisplay");
 
 class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     constructor(applet) {
@@ -14,7 +14,7 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
         this._deviceIcon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: "audio-card-symbolic",
+            icon_name: DEVICE_FALLBACK_ICON,
             icon_size: 18,
             style_class: "modern-sound-output-header-icon"
         });
@@ -153,10 +153,11 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
         const icon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: deviceDisplayIcon(device),
+            icon_name: DEVICE_FALLBACK_ICON,
             icon_size: 16,
             style_class: "modern-sound-output-row-icon"
         });
+        applyDeviceIcon(icon, device);
 
         const name = new St.Label({
             text: device.description || _("Unknown device"),
@@ -230,12 +231,12 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             this._nameLabel.text = active.description || _("Unknown device");
             this._subtitleLabel.text = active.origin || "";
             this._subtitleLabel.visible = !!active.origin;
-            this._deviceIcon.icon_name = deviceDisplayIcon(active);
+            applyDeviceIcon(this._deviceIcon, active);
         } else {
             this._nameLabel.text = _("No output device");
             this._subtitleLabel.text = "";
             this._subtitleLabel.visible = false;
-            this._deviceIcon.icon_name = "audio-card-symbolic";
+            applyDeviceIcon(this._deviceIcon, null);
         }
 
         for (const entry of this._devices) {
