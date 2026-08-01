@@ -15,7 +15,7 @@ function createActor(name) {
         track_hover: true,
         text: "",
         icon_name: "",
-        width: 100,
+        width: 0,
         height: 24,
         set_size(w, h) {
             this.width = w;
@@ -286,7 +286,12 @@ function setupCinnamonMocks() {
                         this.visible = params.visible !== false;
                         this.clutter_text = { ellipsize: 0 };
                         this.clutterText = this.clutter_text;
+                        this._style = "";
                         this.actor = createActor("label");
+                    }
+
+                    set_style(style) {
+                        this._style = style;
                     }
                 },
                 BoxLayout: class {
@@ -375,6 +380,14 @@ function setupCinnamonMocks() {
                 },
                 EVENT_STOP: 1,
                 EVENT_PROPAGATE: 0
+            },
+            Pango: {
+                EllipsizeMode: {
+                    NONE: 0,
+                    START: 1,
+                    MIDDLE: 2,
+                    END: 3
+                }
             },
             Cvc: {
                 MixerControlState: { READY: 1 },

@@ -21,6 +21,20 @@
     border-radius: 8px;
 }
 
+.modern-sound-output-wrap {
+    width: 100%;
+}
+
+.modern-sound-output-labels {
+    min-width: 0;
+    max-width: 210px;
+}
+
+.modern-sound-output-name,
+.modern-sound-output-subtitle {
+    max-width: 210px;
+}
+
 .modern-sound-output-header:hover {
     background-color: rgba(138, 180, 248, 0.08);
 }

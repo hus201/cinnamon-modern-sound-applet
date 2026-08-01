@@ -1,8 +1,22 @@
 const PopupMenu = imports.ui.popupMenu;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
+const Pango = imports.gi.Pango;
 
 const { applyDeviceIcon, DEVICE_FALLBACK_ICON } = require("./widgets/deviceDisplay");
+
+// Max width for the collapsed device header labels only (not the expanded list).
+const HEADER_LABEL_MAX = 210;
+
+function ellipsizeHeaderLabel(label) {
+    if (!label)
+        return;
+
+    if (label.clutter_text)
+        label.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+
+    label.set_style(`max-width: ${HEADER_LABEL_MAX}px;`);
+}
 
 class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     constructor(applet) {
@@ -24,12 +38,14 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             style_class: "modern-sound-output-name",
             y_align: Clutter.ActorAlign.CENTER
         });
+        ellipsizeHeaderLabel(this._nameLabel);
 
         this._subtitleLabel = new St.Label({
             text: "",
             style_class: "modern-sound-output-subtitle",
             y_align: Clutter.ActorAlign.CENTER
         });
+        ellipsizeHeaderLabel(this._subtitleLabel);
 
         this._labels = new St.BoxLayout({
             vertical: true,
