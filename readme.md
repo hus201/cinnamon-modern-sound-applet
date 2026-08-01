@@ -50,7 +50,6 @@ modern-sound@husain-anabtawi.com/
 │   ├── masterVolumeItem.js
 │   ├── outputDeviceItem.js
 │   └── quickActionsItem.js
-├── icon.svg                 # Applet icon (Applets settings / configure window)
 ├── metadata.json          # Applet identity (required)
 ├── settings-schema.json   # Configurable settings
 └── stylesheet.css         # Theming (dark, blue accents)
