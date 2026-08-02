@@ -72,10 +72,7 @@ const { volumeIconName, micIconName } = loadModule("utils/volume-icon-resolver.j
 const { applyDeviceIcon, deviceDisplayIcon } = loadModule("utils/device-icon-resolver.js");
 const {
     VOLUME_ADJUSTMENT_STEP,
-    readStreamVolume,
-    applySliderRatio,
-    adjustStreamVolume,
-    panelVolumeRatio
+    adjustStreamVolume
 } = loadModule("utils/volume-math.js");
 const { MasterVolumeItem, MicVolumeItem } = loadModule("widgets/stream-volume-item.js");
 const { OutputDeviceItem, InputDeviceItem } = loadModule("widgets/device-picker-item.js");
@@ -429,23 +426,6 @@ section("volume-math");
     const norm = 65536;
     const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
 
-    const synced = readStreamVolume(stream, norm);
-    assertEqual(synced.percent, 50, "readStreamVolume shows 50% at half volume");
-    assertEqual(synced.ratio, 0.5, "readStreamVolume ratio is 0.5 at half volume");
-
-    stream.is_muted = true;
-    const muted = readStreamVolume(stream, norm);
-    assertEqual(muted.percent, 0, "readStreamVolume shows 0% when muted");
-    assertEqual(muted.ratio, 0, "readStreamVolume ratio is 0 when muted");
-
-    stream.is_muted = false;
-    const changed = applySliderRatio(0.25, stream, norm);
-    assertEqual(changed.percent, 25, "applySliderRatio maps slider to 25%");
-    assert(changed.muted === false, "applySliderRatio does not mute above threshold");
-
-    const nearZero = applySliderRatio(0.004, stream, norm);
-    assert(nearZero.muted === true, "applySliderRatio mutes below threshold");
-
     stream.volume = norm / 2;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, 1);
@@ -459,8 +439,6 @@ section("volume-math");
     adjustStreamVolume(stream, norm, -1);
     assertEqual(stream.volume, 0, "adjustStreamVolume clamps to zero");
     assert(stream.is_muted === true, "adjustStreamVolume mutes at zero");
-
-    assertEqual(panelVolumeRatio(stream, norm), 0, "panelVolumeRatio is zero when muted");
 }
 
 section("on-icon-scroll-handler");

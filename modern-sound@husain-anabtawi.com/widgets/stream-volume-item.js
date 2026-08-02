@@ -4,10 +4,7 @@ const Slider = imports.ui.slider;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 
-const {
-    readStreamVolume,
-    applySliderRatio
-} = require("./utils/volume-math");
+const { MUTE_THRESHOLD } = require("./utils/volume-math");
 const { volumeIconName, micIconName } = require("./utils/volume-icon-resolver");
 
 const LEVEL_SLIDER_WIDTH = 140;
@@ -138,11 +135,15 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
         if (!this._stream)
             return;
 
-        const { ratio, percent, muted } = readStreamVolume(this._stream, this._volumeNorm());
+        const norm = this._volumeNorm() || 1;
+        const max = this._stream.volume_max || norm;
+        const volume = this._stream.is_muted ? 0 : this._stream.volume;
+        const ratio = Math.min(1, volume / max);
+        const percent = Math.round((volume / norm) * 100) || 0;
 
         this._setSliderValue(ratio);
         this._percentLabel.text = `${percent}%`;
-        this._updateVolumeDisplay(ratio, muted, percent);
+        this._updateVolumeDisplay(ratio, this._stream.is_muted, percent);
         this._afterSync();
     }
 
@@ -150,11 +151,11 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
         if (!this._stream)
             return;
 
-        const { volume, muted, percent } = applySliderRatio(
-            value,
-            this._stream,
-            this._volumeNorm()
-        );
+        const norm = this._volumeNorm() || 1;
+        const max = this._stream.volume_max || norm;
+        const volume = value * max;
+        const muted = value < MUTE_THRESHOLD;
+        const percent = Math.round((volume / norm) * 100) || 0;
 
         this._stream.volume = volume;
         this._stream.push_volume();
