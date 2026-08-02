@@ -427,6 +427,8 @@ function setupCinnamonMocks() {
                         this._nextHandlerId = 1;
                         this._outputs = {};
                         this._activeOutput = null;
+                        this._inputs = {};
+                        this._activeInput = null;
                         this._streams = {};
                     }
 
@@ -478,6 +480,25 @@ function setupCinnamonMocks() {
                         this._emit("output-removed", id);
                     }
 
+                    lookup_input_id(id) {
+                        return this._inputs[id] || null;
+                    }
+
+                    change_input(device) {
+                        this._activeInput = device;
+                        this._emit("active-input-update");
+                    }
+
+                    addInput(id, device) {
+                        this._inputs[id] = device;
+                        this._emit("input-added", id);
+                    }
+
+                    removeInput(id) {
+                        delete this._inputs[id];
+                        this._emit("input-removed", id);
+                    }
+
                     lookup_stream_id(id) {
                         return this._streams[id] || null;
                     }
@@ -505,7 +526,15 @@ function setupCinnamonMocks() {
                     }
 
                     get_default_source() {
-                        return createMockStream({ is_muted: false });
+                        if (this._activeInput)
+                            return this._activeInput;
+                        const ids = Object.keys(this._inputs);
+                        if (ids.length > 0)
+                            return this._inputs[ids[0]];
+                        return createMockStream({
+                            description: "Built-in Microphone",
+                            origin: "Analog Mono"
+                        });
                     }
 
                     _emit(signal, ...args) {
@@ -586,6 +615,10 @@ function createMockOutput(id, description, origin, iconName) {
     };
 }
 
+function createMockInput(id, description, origin, iconName) {
+    return createMockOutput(id, description, origin, iconName || "audio-input-microphone-symbolic");
+}
+
 function createMockAppStream({
     name = "Firefox",
     icon_name = "firefox",
@@ -610,6 +643,7 @@ module.exports = {
     setupCinnamonMocks,
     createMockStream,
     createMockOutput,
+    createMockInput,
     createMockAppStream,
     createActor
 };

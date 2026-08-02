@@ -16,7 +16,7 @@ const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStr
 setupCinnamonMocks();
 
 const { volumeIconName, micIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
-const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/device-display");
+const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/utils/device-icon-resolver");
 const { MasterVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/master-volume-item");
 const { MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/mic-volume-item");
 const { OutputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/output-device-item");

@@ -8,6 +8,7 @@ const Cvc = imports.gi.Cvc;
 const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
 const { MasterVolumeItem } = require("./widgets/master-volume-item");
 const { MicVolumeItem } = require("./widgets/mic-volume-item");
+const { InputDeviceItem } = require("./widgets/input-device-item");
 const { OutputDeviceItem } = require("./widgets/output-device-item");
 const { ApplicationsItem } = require("./widgets/applications-item");
 const { QuickActionsItem } = require("./widgets/quick-actions-item");
@@ -51,11 +52,15 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._micVolume = new MicVolumeItem(this);
         this._menu.addMenuItem(this._micVolume);
 
-        addSectionSeparator(this._menu);
-
         this._outputDevice = new OutputDeviceItem(this);
         this._outputDevice.bindControl(this._control);
         this._menu.addMenuItem(this._outputDevice);
+
+        this._inputDevice = new InputDeviceItem(this);
+        this._inputDevice.bindControl(this._control);
+        this._menu.addMenuItem(this._inputDevice);
+
+        addSectionSeparator(this._menu);
 
         this._applications = new ApplicationsItem(this);
         this._applications.bindControl(this._control);
@@ -96,6 +101,7 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._masterVolume.connectStream(this._output);
         this._micVolume.connectStream(this._input);
+        this._inputDevice._syncActiveDevice();
         this._outputDevice._syncActiveDevice();
 
         if (this._output) {

@@ -8,7 +8,7 @@ const vm = require("vm");
 const ROOT = path.resolve(__dirname, "..");
 const APPLET_DIR = path.join(ROOT, "modern-sound@husain-anabtawi.com");
 
-const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStream } = require("./mocks/cinnamon");
+const { setupCinnamonMocks, createMockStream, createMockOutput, createMockInput, createMockAppStream } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
 const cinnamonImports = globalThis.imports;
@@ -69,19 +69,21 @@ function section(title) {
 }
 
 const { volumeIconName, micIconName } = loadModule("widgets/volume.js");
-const { applyDeviceIcon, deviceDisplayIcon } = loadModule("widgets/device-display.js");
+const { applyDeviceIcon, deviceDisplayIcon } = loadModule("utils/device-icon-resolver.js");
 const { MasterVolumeItem } = loadModule("widgets/master-volume-item.js");
 const { MicVolumeItem } = loadModule("widgets/mic-volume-item.js");
 const { OutputDeviceItem } = loadModule("widgets/output-device-item.js");
+const { InputDeviceItem } = loadModule("widgets/input-device-item.js");
 const { ApplicationsItem } = loadModule("widgets/applications-item.js");
 const { AppStreamItem } = loadModule("widgets/app-stream-item.js");
 const { appStreamLabel, applyAppStreamIcon } = loadModule("widgets/app-display.js");
 const { QuickActionsItem } = loadModule("widgets/quick-actions-item.js");
 
-function createMockApplet(output) {
+function createMockApplet(output, input) {
     return {
         _volumeNorm: 65536,
         _output: output || null,
+        _input: input || null,
         _updatePanelIcon() {},
         _syncMuteStates() {}
     };
@@ -280,6 +282,66 @@ try {
     console.error(`  ✗ OutputDeviceItem single device threw: ${e.message}`);
 }
 
+section("InputDeviceItem construction");
+let inputItem;
+try {
+    inputItem = new InputDeviceItem(createMockApplet());
+    assert(inputItem._nameLabel !== undefined, "creates input device name label");
+    assert(inputItem._chevron !== undefined, "creates input chevron");
+    assertEqual(inputItem._nameLabel.text, "No input device", "default name when no input");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ InputDeviceItem construction threw: ${e.message}`);
+}
+
+section("InputDeviceItem device list");
+if (inputItem) {
+    const builtIn = createMockInput(0, "Built-in Microphone", "Analog Mono");
+    const usbMic = createMockInput(1, "USB Microphone", "Digital Mono");
+    const control = createMockControl();
+    const applet = createMockApplet(null, builtIn);
+
+    inputItem = new InputDeviceItem(applet);
+    inputItem.bindControl(control);
+    control.addInput(0, builtIn);
+    control.addInput(1, usbMic);
+
+    assertEqual(inputItem._devices.length, 2, "tracks two input devices");
+    assert(inputItem._chevron.visible === true, "shows input chevron with multiple devices");
+    assertEqual(inputItem._nameLabel.text, "Built-in Microphone", "header shows active input device");
+    assertEqual(inputItem._subtitleLabel.text, "Input device", "header shows input device label");
+
+    inputItem._syncActiveDevice();
+    const activeRow = inputItem._devices.find((entry) => entry.id === 0);
+    assert(activeRow !== undefined, "finds active input device row");
+    assertEqual(activeRow.row._radio.icon_name, "radio-checked-symbolic", "marks active input row");
+
+    const usbRow = inputItem._devices.find((entry) => entry.id === 1);
+    assertEqual(usbRow.row._radio.icon_name, "radio-off-symbolic", "inactive input row is off");
+
+    usbRow.row.emit("button-press-event", { get_button: () => 1 });
+    assert(control._activeInput === usbMic, "input row click switches device");
+    assertEqual(control._activeInput.description, "USB Microphone", "active input updated");
+
+    inputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(inputItem._listBox.visible === true, "input header expands device list");
+    inputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(inputItem._listBox.visible === false, "input header collapses device list");
+}
+
+section("InputDeviceItem single device");
+try {
+    const device = createMockInput(0, "Headset Mic", "Analog Mono");
+    const control = createMockControl();
+    const item = new InputDeviceItem(createMockApplet(null, device));
+    item.bindControl(control);
+    control.addInput(0, device);
+    assert(item._chevron.visible === false, "hides input chevron with one device");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ InputDeviceItem single device threw: ${e.message}`);
+}
+
 section("appStreamLabel");
 assertEqual(appStreamLabel({ name: "firefox" }), "Firefox", "capitalizes app name");
 
@@ -400,10 +462,11 @@ try {
     assert(instance != null, "main() returns applet instance");
     assert(instance._masterVolume !== undefined, "applet has master volume");
     assert(instance._micVolume !== undefined, "applet has mic volume");
+    assert(instance._inputDevice !== undefined, "applet has input device switcher");
     assert(instance._outputDevice !== undefined, "applet has output device switcher");
     assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 7, "menu has volume, mic, separators, output, apps, and actions");
+    assert(instance._menu._items.length >= 8, "menu has volume, mic, output, input, separators, apps, and actions");
 } catch (e) {
     failed++;
     console.error(`  ✗ applet.js smoke test threw: ${e.message}`);

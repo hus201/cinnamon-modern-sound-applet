@@ -13,15 +13,18 @@ A modern Cinnamon panel sound applet — compact by default, expandable when nee
 - Master volume slider with percentage (e.g. 78%)
 - Mic volume slider with percentage
 - Output device row (current device + chevron to expand)
+- Input device row (current device + chevron to expand)
 - **Applications** section — per-app volume and media controls
   - Simple apps: icon + mini slider (e.g. Firefox)
   - Media players: track title + prev / play-pause / next (e.g. Spotify)
 - **Quick actions** row: Mute Sound · Mute Mic · Open Settings (opens Sound Settings)
 
-**Expanded (output device list)**
+**Expanded (device lists)**
 
 - Radio list of output devices with icons and subtitles
   - Built-in speakers, HDMI, USB DAC, Bluetooth (with battery %)
+- Radio list of input devices with icons and subtitles
+  - Built-in microphone, USB mic, headset, Bluetooth
 - **Quick actions** row: Mute Sound · Mute Mic · Open Settings (opens Sound Settings)
 
 ### Right click — applet management
@@ -51,11 +54,13 @@ modern-sound@husain-anabtawi.com/
 ├── applet.js              # Main applet logic
 ├── handlers/              # Panel icon event handlers
 │   └── on-icon-scroll-handler.js
+├── utils/                 # Shared helpers
+│   └── device-icon-resolver.js
 ├── widgets/               # Custom menu widgets
 │   ├── volume.js
-│   ├── device-display.js
 │   ├── master-volume-item.js
 │   ├── mic-volume-item.js
+│   ├── input-device-item.js
 │   ├── output-device-item.js
 │   ├── app-display.js
 │   ├── app-stream-item.js
@@ -130,5 +135,6 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Mic volume slider + percentage | Done |
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |
+| Input device picker | Done |
 | Applications / per-app volume | Done |
 | Media player controls (MPRIS) | Planned |

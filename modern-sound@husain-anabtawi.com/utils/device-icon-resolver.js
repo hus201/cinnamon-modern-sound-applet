@@ -1,14 +1,16 @@
 const St = imports.gi.St;
 
 const DEVICE_FALLBACK_ICON = "audio-speakers-symbolic";
+const INPUT_DEVICE_FALLBACK_ICON = "audio-input-microphone-symbolic";
 
-function applyDeviceIcon(icon, device) {
+function applyDeviceIcon(icon, device, fallbackIcon) {
+    const fallback = fallbackIcon || DEVICE_FALLBACK_ICON;
     if (!icon)
         return;
 
     if (!device) {
         icon.gicon = null;
-        icon.icon_name = DEVICE_FALLBACK_ICON;
+        icon.icon_name = fallback;
         icon.icon_type = St.IconType.SYMBOLIC;
         return;
     }
@@ -31,17 +33,22 @@ function applyDeviceIcon(icon, device) {
     }
 
     icon.gicon = null;
-    icon.icon_name = DEVICE_FALLBACK_ICON;
+    icon.icon_name = fallback;
     icon.icon_type = St.IconType.SYMBOLIC;
 }
 
-function deviceDisplayIcon(device) {
+function deviceDisplayIcon(device, fallbackIcon) {
     if (device && device.get_icon_name) {
         const name = device.get_icon_name();
         if (name)
             return name;
     }
-    return DEVICE_FALLBACK_ICON;
+    return fallbackIcon || DEVICE_FALLBACK_ICON;
 }
 
-module.exports = { applyDeviceIcon, deviceDisplayIcon, DEVICE_FALLBACK_ICON };
+module.exports = {
+    applyDeviceIcon,
+    deviceDisplayIcon,
+    DEVICE_FALLBACK_ICON,
+    INPUT_DEVICE_FALLBACK_ICON
+};

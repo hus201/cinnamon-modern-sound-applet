@@ -3,9 +3,8 @@ const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Pango = imports.gi.Pango;
 
-const { applyDeviceIcon, DEVICE_FALLBACK_ICON } = require("./utils/device-icon-resolver");
+const { applyDeviceIcon, INPUT_DEVICE_FALLBACK_ICON } = require("./utils/device-icon-resolver");
 
-// Max width for the collapsed device header labels only (not the expanded list).
 const HEADER_LABEL_MAX = 210;
 
 function ellipsizeHeaderLabel(label) {
@@ -18,38 +17,38 @@ function ellipsizeHeaderLabel(label) {
     label.set_style(`max-width: ${HEADER_LABEL_MAX}px;`);
 }
 
-class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
+class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     constructor(applet) {
         super({ activate: false, hover: false });
         this._applet = applet;
         this._expanded = false;
         this._devices = [];
-        this.actor.add_style_class_name("modern-sound-output-item");
+        this.actor.add_style_class_name("modern-sound-input-item");
 
         this._deviceIcon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: DEVICE_FALLBACK_ICON,
+            icon_name: INPUT_DEVICE_FALLBACK_ICON,
             icon_size: 18,
-            style_class: "modern-sound-output-header-icon"
+            style_class: "modern-sound-input-header-icon"
         });
 
         this._nameLabel = new St.Label({
-            text: _("No output device"),
-            style_class: "modern-sound-output-name",
+            text: _("No input device"),
+            style_class: "modern-sound-input-name",
             y_align: Clutter.ActorAlign.CENTER
         });
         ellipsizeHeaderLabel(this._nameLabel);
 
         this._subtitleLabel = new St.Label({
             text: "",
-            style_class: "modern-sound-output-subtitle",
+            style_class: "modern-sound-input-subtitle",
             y_align: Clutter.ActorAlign.CENTER
         });
         ellipsizeHeaderLabel(this._subtitleLabel);
 
         this._labels = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-output-labels",
+            style_class: "modern-sound-input-labels",
             x_expand: true
         });
         this._labels.add_actor(this._nameLabel);
@@ -59,12 +58,12 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "pan-down-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-output-chevron",
+            style_class: "modern-sound-input-chevron",
             y_align: Clutter.ActorAlign.CENTER
         });
 
         this._header = new St.BoxLayout({
-            style_class: "modern-sound-output-header",
+            style_class: "modern-sound-input-header",
             reactive: true,
             track_hover: true,
             can_focus: true,
@@ -84,13 +83,13 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
         this._listBox = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-output-list",
+            style_class: "modern-sound-input-list",
             visible: false
         });
 
         this._outer = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-output-wrap",
+            style_class: "modern-sound-input-wrap",
             x_expand: true
         });
         this._outer.add_actor(this._header);
@@ -101,22 +100,22 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
     bindControl(control) {
         if (this._control) {
-            this._control.disconnect(this._outputAddedId);
-            this._control.disconnect(this._outputRemovedId);
-            this._control.disconnect(this._activeOutputId);
+            this._control.disconnect(this._inputAddedId);
+            this._control.disconnect(this._inputRemovedId);
+            this._control.disconnect(this._activeInputId);
         }
 
         this._control = control;
         if (!control)
             return;
 
-        this._outputAddedId = control.connect("output-added", (_c, id) => {
+        this._inputAddedId = control.connect("input-added", (_c, id) => {
             this._addDevice(id);
         });
-        this._outputRemovedId = control.connect("output-removed", (_c, id) => {
+        this._inputRemovedId = control.connect("input-removed", (_c, id) => {
             this._removeDevice(id);
         });
-        this._activeOutputId = control.connect("active-output-update", () => {
+        this._activeInputId = control.connect("active-input-update", () => {
             this._syncActiveDevice();
         });
     }
@@ -134,7 +133,7 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
         if (!this._control || this._devices.some((entry) => entry.id === id))
             return;
 
-        const device = this._control.lookup_output_id(id);
+        const device = this._control.lookup_input_id(id);
         if (!device)
             return;
 
@@ -164,25 +163,25 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "radio-off-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-output-radio"
+            style_class: "modern-sound-input-radio"
         });
 
         const icon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: DEVICE_FALLBACK_ICON,
+            icon_name: INPUT_DEVICE_FALLBACK_ICON,
             icon_size: 16,
-            style_class: "modern-sound-output-row-icon"
+            style_class: "modern-sound-input-row-icon"
         });
         applyDeviceIcon(icon, device);
 
         const name = new St.Label({
             text: device.description || _("Unknown device"),
-            style_class: "modern-sound-output-row-name"
+            style_class: "modern-sound-input-row-name"
         });
 
         const subtitle = new St.Label({
             text: device.origin || "",
-            style_class: "modern-sound-output-row-subtitle"
+            style_class: "modern-sound-input-row-subtitle"
         });
 
         const labels = new St.BoxLayout({ vertical: true, x_expand: true });
@@ -194,12 +193,12 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "emblem-ok-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-output-check",
+            style_class: "modern-sound-input-check",
             opacity: 0
         });
 
         const row = new St.BoxLayout({
-            style_class: "modern-sound-output-row",
+            style_class: "modern-sound-input-row",
             reactive: true,
             track_hover: true,
             can_focus: true,
@@ -218,7 +217,7 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
         row.connect("button-press-event", (_actor, event) => {
             if (event.get_button() !== 1 || !this._control)
                 return Clutter.EVENT_PROPAGATE;
-            this._control.change_output(device);
+            this._control.change_input(device);
             return Clutter.EVENT_STOP;
         });
 
@@ -240,19 +239,19 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     }
 
     _syncActiveDevice() {
-        const active = this._applet._output;
+        const active = this._applet._input;
         const activeId = active ? active.index : null;
 
         if (active) {
             this._nameLabel.text = active.description || _("Unknown device");
-            this._subtitleLabel.text = _("Output device");
+            this._subtitleLabel.text = _("Input device");
             this._subtitleLabel.visible = true;
             applyDeviceIcon(this._deviceIcon, active);
         } else {
-            this._nameLabel.text = _("No output device");
+            this._nameLabel.text = _("No input device");
             this._subtitleLabel.text = "";
             this._subtitleLabel.visible = false;
-            applyDeviceIcon(this._deviceIcon, null);
+            applyDeviceIcon(this._deviceIcon, null, INPUT_DEVICE_FALLBACK_ICON);
         }
 
         for (const entry of this._devices) {
@@ -266,4 +265,4 @@ class OutputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     }
 }
 
-module.exports = { OutputDeviceItem };
+module.exports = { InputDeviceItem };
