@@ -65,14 +65,39 @@ tests/
 └── run-tests-node.js      # Unit/smoke tests (via ./test.sh)
 ```
 
-## Install (development)
+## Install
+
+**Official (recommended)** — from Cinnamon:
+
+1. Open **Menu → Preferences → Applets**
+2. Go to **Download**
+3. Search for **Modern Sound** and install
+4. Add it to your panel
+
+Reload after updates: `Alt+F2` → `r` → Enter
+
+## Development (optional)
+
+Link this repo into your applet folder for live editing:
 
 ```bash
-mkdir -p ~/.local/share/cinnamon/applets
-ln -sfn "$(pwd)/modern-sound@husain-anabtawi.com" ~/.local/share/cinnamon/applets/modern-sound@husain-anabtawi.com
+./dev-link.sh
 ```
 
-Restart Cinnamon: `Alt+F2` → `r` → Enter, then add **Modern Sound** from Applets settings.
+Run tests and reload Cinnamon:
+
+```bash
+./reload.sh   # tests only when using the Spices copy
+./dev-link.sh # then reload after code changes
+```
+
+Switch back to the Spices-installed copy:
+
+```bash
+./dev-unlink.sh
+```
+
+Then re-download or update **Modern Sound** from Applets → Download if needed.
 
 ## Test before reload
 
