@@ -219,8 +219,12 @@ class AppletSettings {
     }
 
     bind(key, prop, callback) {
+        const defaults = {
+            hideSingleOutputDevice: false,
+            hideSingleInputDevice: false
+        };
         if (!(key in this.target))
-            this.target[prop] = null;
+            this.target[prop] = key in defaults ? defaults[key] : null;
         if (callback)
             callback();
     }

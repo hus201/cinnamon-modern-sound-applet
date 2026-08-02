@@ -279,6 +279,14 @@ try {
     item.bindControl(control);
     control.addOutput(0, device);
     assert(item._chevron.visible === false, "hides chevron with one device");
+    assert(item.actor.visible === true, "shows single output device by default");
+
+    item._applet.hideSingleOutputDevice = true;
+    item._updateVisibility();
+    assert(item.actor.visible === false, "hides single output device when setting enabled");
+
+    control.addOutput(1, createMockOutput(1, "HDMI", "Digital"));
+    assert(item.actor.visible === true, "shows output device row with multiple devices");
 } catch (e) {
     failed++;
     console.error(`  ✗ OutputDeviceItem single device threw: ${e.message}`);
@@ -339,6 +347,11 @@ try {
     item.bindControl(control);
     control.addInput(0, device);
     assert(item._chevron.visible === false, "hides input chevron with one device");
+    assert(item.actor.visible === true, "shows single input device by default");
+
+    item._applet.hideSingleInputDevice = true;
+    item._updateVisibility();
+    assert(item.actor.visible === false, "hides single input device when setting enabled");
 } catch (e) {
     failed++;
     console.error(`  ✗ InputDeviceItem single device threw: ${e.message}`);

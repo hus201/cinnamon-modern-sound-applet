@@ -245,6 +245,20 @@ class DevicePickerItem extends PopupMenu.PopupBaseMenuItem {
             this._chevron.icon_name = "pan-down-symbolic";
             this.actor.change_style_pseudo_class("open", false);
         }
+
+        this._updateVisibility();
+    }
+
+    _hideWhenSingle() {
+        return false;
+    }
+
+    _updateVisibility() {
+        const hide = this._hideWhenSingle() && this._devices.length === 1;
+        if (hide)
+            this.actor.hide();
+        else
+            this.actor.show();
     }
 
     _syncActiveDevice() {
@@ -276,6 +290,10 @@ class DevicePickerItem extends PopupMenu.PopupBaseMenuItem {
 }
 
 class OutputDeviceItem extends DevicePickerItem {
+    _hideWhenSingle() {
+        return this._applet.hideSingleOutputDevice === true;
+    }
+
     _emptyLabelText() {
         return "No output device";
     }
@@ -314,6 +332,10 @@ class OutputDeviceItem extends DevicePickerItem {
 }
 
 class InputDeviceItem extends DevicePickerItem {
+    _hideWhenSingle() {
+        return this._applet.hideSingleInputDevice === true;
+    }
+
     _emptyLabelText() {
         return "No input device";
     }

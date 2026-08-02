@@ -135,5 +135,6 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |
 | Input device picker | Done |
+| Hide single input/output device (setting) | Done |
 | Applications / per-app volume | Done |
 | Media player controls (MPRIS) | Planned |

@@ -43,6 +43,12 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._settings = new Settings.AppletSettings(this, metadata.uuid, instanceId);
         this._settings.bind("keyOpen", "keyOpen", () => this._setKeybinding());
+        this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
+            this._syncDeviceVisibility();
+        });
+        this._settings.bind("hideSingleInputDevice", "hideSingleInputDevice", () => {
+            this._syncDeviceVisibility();
+        });
 
         this._masterVolume = new MasterVolumeItem(this);
         this._menu.addMenuItem(this._masterVolume);
@@ -121,6 +127,14 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._syncMuteStates();
         this._updatePanelIcon();
+        this._syncDeviceVisibility();
+    }
+
+    _syncDeviceVisibility() {
+        if (this._outputDevice)
+            this._outputDevice._updateVisibility();
+        if (this._inputDevice)
+            this._inputDevice._updateVisibility();
     }
 
     _syncMuteStates() {
