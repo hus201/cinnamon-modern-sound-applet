@@ -6,10 +6,9 @@ const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
 const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
-const { MasterVolumeItem } = require("./widgets/master-volume-item");
-const { MicVolumeItem } = require("./widgets/mic-volume-item");
-const { InputDeviceItem } = require("./widgets/input-device-item");
-const { OutputDeviceItem } = require("./widgets/output-device-item");
+const { panelVolumeRatio } = require("./utils/volume-math");
+const { MasterVolumeItem, MicVolumeItem } = require("./widgets/stream-volume-item");
+const { InputDeviceItem, OutputDeviceItem } = require("./widgets/device-picker-item");
 const { ApplicationsItem } = require("./widgets/applications-item");
 const { QuickActionsItem } = require("./widgets/quick-actions-item");
 
@@ -155,10 +154,7 @@ class ModernSoundApplet extends Applet.IconApplet {
             return;
         }
 
-        const norm = this._volumeNorm || 1;
-        const max = this._output.volume_max || norm;
-        const volume = this._output.is_muted ? 0 : this._output.volume;
-        const ratio = volume / max;
+        const ratio = panelVolumeRatio(this._output, this._volumeNorm);
 
         let icon = "audio-volume-muted-symbolic";
         if (!this._output.is_muted) {

@@ -55,13 +55,12 @@ modern-sound@husain-anabtawi.com/
 ├── handlers/              # Panel icon event handlers
 │   └── on-icon-scroll-handler.js
 ├── utils/                 # Shared helpers
-│   └── device-icon-resolver.js
+│   ├── device-icon-resolver.js
+│   ├── volume-icon-resolver.js
+│   └── volume-math.js
 ├── widgets/               # Custom menu widgets
-│   ├── volume.js
-│   ├── master-volume-item.js
-│   ├── mic-volume-item.js
-│   ├── input-device-item.js
-│   ├── output-device-item.js
+│   ├── stream-volume-item.js
+│   ├── device-picker-item.js
 │   ├── app-display.js
 │   ├── app-stream-item.js
 │   ├── applications-item.js

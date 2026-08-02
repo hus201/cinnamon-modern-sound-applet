@@ -15,11 +15,10 @@ imports.searchPath.unshift(APPLET_DIR);
 const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStream } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
-const { volumeIconName, micIconName } = require("./../modern-sound@husain-anabtawi.com/widgets/volume");
+const { volumeIconName, micIconName } = require("./../modern-sound@husain-anabtawi.com/utils/volume-icon-resolver");
 const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/utils/device-icon-resolver");
-const { MasterVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/master-volume-item");
-const { MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/mic-volume-item");
-const { OutputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/output-device-item");
+const { MasterVolumeItem, MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/stream-volume-item");
+const { OutputDeviceItem, InputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/device-picker-item");
 const { ApplicationsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/applications-item");
 const { AppStreamItem } = require("./../modern-sound@husain-anabtawi.com/widgets/app-stream-item");
 const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/app-display");

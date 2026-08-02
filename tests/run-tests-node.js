@@ -68,12 +68,17 @@ function section(title) {
     console.log(`\n${title}`);
 }
 
-const { volumeIconName, micIconName } = loadModule("widgets/volume.js");
+const { volumeIconName, micIconName } = loadModule("utils/volume-icon-resolver.js");
 const { applyDeviceIcon, deviceDisplayIcon } = loadModule("utils/device-icon-resolver.js");
-const { MasterVolumeItem } = loadModule("widgets/master-volume-item.js");
-const { MicVolumeItem } = loadModule("widgets/mic-volume-item.js");
-const { OutputDeviceItem } = loadModule("widgets/output-device-item.js");
-const { InputDeviceItem } = loadModule("widgets/input-device-item.js");
+const {
+    VOLUME_ADJUSTMENT_STEP,
+    readStreamVolume,
+    applySliderRatio,
+    adjustStreamVolume,
+    panelVolumeRatio
+} = loadModule("utils/volume-math.js");
+const { MasterVolumeItem, MicVolumeItem } = loadModule("widgets/stream-volume-item.js");
+const { OutputDeviceItem, InputDeviceItem } = loadModule("widgets/device-picker-item.js");
 const { ApplicationsItem } = loadModule("widgets/applications-item.js");
 const { AppStreamItem } = loadModule("widgets/app-stream-item.js");
 const { appStreamLabel, applyAppStreamIcon } = loadModule("widgets/app-display.js");
@@ -419,6 +424,45 @@ try {
     console.error(`  ✗ QuickActionsItem construction threw: ${e.message}`);
 }
 
+section("volume-math");
+{
+    const norm = 65536;
+    const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+
+    const synced = readStreamVolume(stream, norm);
+    assertEqual(synced.percent, 50, "readStreamVolume shows 50% at half volume");
+    assertEqual(synced.ratio, 0.5, "readStreamVolume ratio is 0.5 at half volume");
+
+    stream.is_muted = true;
+    const muted = readStreamVolume(stream, norm);
+    assertEqual(muted.percent, 0, "readStreamVolume shows 0% when muted");
+    assertEqual(muted.ratio, 0, "readStreamVolume ratio is 0 when muted");
+
+    stream.is_muted = false;
+    const changed = applySliderRatio(0.25, stream, norm);
+    assertEqual(changed.percent, 25, "applySliderRatio maps slider to 25%");
+    assert(changed.muted === false, "applySliderRatio does not mute above threshold");
+
+    const nearZero = applySliderRatio(0.004, stream, norm);
+    assert(nearZero.muted === true, "applySliderRatio mutes below threshold");
+
+    stream.volume = norm / 2;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, 1);
+    assert(stream.volume > norm / 2, "adjustStreamVolume increases volume on scroll up");
+
+    adjustStreamVolume(stream, norm, -1);
+    assertEqual(stream.volume, norm / 2, "adjustStreamVolume decreases volume on scroll down");
+
+    stream.volume = norm * 0.02;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, -1);
+    assertEqual(stream.volume, 0, "adjustStreamVolume clamps to zero");
+    assert(stream.is_muted === true, "adjustStreamVolume mutes at zero");
+
+    assertEqual(panelVolumeRatio(stream, norm), 0, "panelVolumeRatio is zero when muted");
+}
+
 section("on-icon-scroll-handler");
 try {
     const { adjustMasterVolume } = loadModule("handlers/on-icon-scroll-handler.js");
@@ -427,7 +471,7 @@ try {
     const instance = appletModule.main(metadata, 3, 32, 2);
     const output = instance._output;
     const norm = instance._volumeNorm;
-    const step = norm * 0.05;
+    const step = norm * VOLUME_ADJUSTMENT_STEP;
 
     output.volume = norm / 2;
     output.is_muted = false;

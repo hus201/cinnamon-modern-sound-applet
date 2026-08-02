@@ -3,7 +3,11 @@ const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Pango = imports.gi.Pango;
 
-const { applyDeviceIcon, INPUT_DEVICE_FALLBACK_ICON } = require("./utils/device-icon-resolver");
+const {
+    applyDeviceIcon,
+    DEVICE_FALLBACK_ICON,
+    INPUT_DEVICE_FALLBACK_ICON
+} = require("./utils/device-icon-resolver");
 
 const HEADER_LABEL_MAX = 210;
 
@@ -17,38 +21,43 @@ function ellipsizeHeaderLabel(label) {
     label.set_style(`max-width: ${HEADER_LABEL_MAX}px;`);
 }
 
-class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
+function deviceStyleClass(name) {
+    return `modern-sound-device-${name}`;
+}
+
+class DevicePickerItem extends PopupMenu.PopupBaseMenuItem {
     constructor(applet) {
         super({ activate: false, hover: false });
         this._applet = applet;
         this._expanded = false;
         this._devices = [];
-        this.actor.add_style_class_name("modern-sound-input-item");
+
+        this.actor.add_style_class_name(deviceStyleClass("item"));
 
         this._deviceIcon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: INPUT_DEVICE_FALLBACK_ICON,
+            icon_name: this._fallbackIcon(),
             icon_size: 18,
-            style_class: "modern-sound-input-header-icon"
+            style_class: deviceStyleClass("header-icon")
         });
 
         this._nameLabel = new St.Label({
-            text: _("No input device"),
-            style_class: "modern-sound-input-name",
+            text: _(this._emptyLabelText()),
+            style_class: deviceStyleClass("name"),
             y_align: Clutter.ActorAlign.CENTER
         });
         ellipsizeHeaderLabel(this._nameLabel);
 
         this._subtitleLabel = new St.Label({
             text: "",
-            style_class: "modern-sound-input-subtitle",
+            style_class: deviceStyleClass("subtitle"),
             y_align: Clutter.ActorAlign.CENTER
         });
         ellipsizeHeaderLabel(this._subtitleLabel);
 
         this._labels = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-input-labels",
+            style_class: deviceStyleClass("labels"),
             x_expand: true
         });
         this._labels.add_actor(this._nameLabel);
@@ -58,12 +67,12 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "pan-down-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-input-chevron",
+            style_class: deviceStyleClass("chevron"),
             y_align: Clutter.ActorAlign.CENTER
         });
 
         this._header = new St.BoxLayout({
-            style_class: "modern-sound-input-header",
+            style_class: deviceStyleClass("header"),
             reactive: true,
             track_hover: true,
             can_focus: true,
@@ -83,13 +92,13 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
         this._listBox = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-input-list",
+            style_class: deviceStyleClass("list"),
             visible: false
         });
 
         this._outer = new St.BoxLayout({
             vertical: true,
-            style_class: "modern-sound-input-wrap",
+            style_class: deviceStyleClass("wrap"),
             x_expand: true
         });
         this._outer.add_actor(this._header);
@@ -100,22 +109,22 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
 
     bindControl(control) {
         if (this._control) {
-            this._control.disconnect(this._inputAddedId);
-            this._control.disconnect(this._inputRemovedId);
-            this._control.disconnect(this._activeInputId);
+            this._control.disconnect(this._deviceAddedId);
+            this._control.disconnect(this._deviceRemovedId);
+            this._control.disconnect(this._activeDeviceId);
         }
 
         this._control = control;
         if (!control)
             return;
 
-        this._inputAddedId = control.connect("input-added", (_c, id) => {
+        this._deviceAddedId = control.connect(this._deviceAddedSignal(), (_c, id) => {
             this._addDevice(id);
         });
-        this._inputRemovedId = control.connect("input-removed", (_c, id) => {
+        this._deviceRemovedId = control.connect(this._deviceRemovedSignal(), (_c, id) => {
             this._removeDevice(id);
         });
-        this._activeInputId = control.connect("active-input-update", () => {
+        this._activeDeviceId = control.connect(this._activeDeviceSignal(), () => {
             this._syncActiveDevice();
         });
     }
@@ -133,7 +142,7 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
         if (!this._control || this._devices.some((entry) => entry.id === id))
             return;
 
-        const device = this._control.lookup_input_id(id);
+        const device = this._lookupDevice(id);
         if (!device)
             return;
 
@@ -163,25 +172,25 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "radio-off-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-input-radio"
+            style_class: deviceStyleClass("radio")
         });
 
         const icon = new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
-            icon_name: INPUT_DEVICE_FALLBACK_ICON,
+            icon_name: this._fallbackIcon(),
             icon_size: 16,
-            style_class: "modern-sound-input-row-icon"
+            style_class: deviceStyleClass("row-icon")
         });
         applyDeviceIcon(icon, device);
 
         const name = new St.Label({
             text: device.description || _("Unknown device"),
-            style_class: "modern-sound-input-row-name"
+            style_class: deviceStyleClass("row-name")
         });
 
         const subtitle = new St.Label({
             text: device.origin || "",
-            style_class: "modern-sound-input-row-subtitle"
+            style_class: deviceStyleClass("row-subtitle")
         });
 
         const labels = new St.BoxLayout({ vertical: true, x_expand: true });
@@ -193,12 +202,12 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
             icon_type: St.IconType.SYMBOLIC,
             icon_name: "emblem-ok-symbolic",
             icon_size: 14,
-            style_class: "modern-sound-input-check",
+            style_class: deviceStyleClass("check"),
             opacity: 0
         });
 
         const row = new St.BoxLayout({
-            style_class: "modern-sound-input-row",
+            style_class: deviceStyleClass("row"),
             reactive: true,
             track_hover: true,
             can_focus: true,
@@ -217,7 +226,7 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
         row.connect("button-press-event", (_actor, event) => {
             if (event.get_button() !== 1 || !this._control)
                 return Clutter.EVENT_PROPAGATE;
-            this._control.change_input(device);
+            this._changeDevice(device);
             return Clutter.EVENT_STOP;
         });
 
@@ -239,19 +248,20 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     }
 
     _syncActiveDevice() {
-        const active = this._applet._input;
+        const active = this._activeDevice();
         const activeId = active ? active.index : null;
+        const fallbackIcon = this._fallbackIcon();
 
         if (active) {
             this._nameLabel.text = active.description || _("Unknown device");
-            this._subtitleLabel.text = _("Input device");
+            this._subtitleLabel.text = _(this._subtitleLabelText());
             this._subtitleLabel.visible = true;
             applyDeviceIcon(this._deviceIcon, active);
         } else {
-            this._nameLabel.text = _("No input device");
+            this._nameLabel.text = _(this._emptyLabelText());
             this._subtitleLabel.text = "";
             this._subtitleLabel.visible = false;
-            applyDeviceIcon(this._deviceIcon, null, INPUT_DEVICE_FALLBACK_ICON);
+            applyDeviceIcon(this._deviceIcon, null, fallbackIcon);
         }
 
         for (const entry of this._devices) {
@@ -265,4 +275,84 @@ class InputDeviceItem extends PopupMenu.PopupBaseMenuItem {
     }
 }
 
-module.exports = { InputDeviceItem };
+class OutputDeviceItem extends DevicePickerItem {
+    _emptyLabelText() {
+        return "No output device";
+    }
+
+    _subtitleLabelText() {
+        return "Output device";
+    }
+
+    _fallbackIcon() {
+        return DEVICE_FALLBACK_ICON;
+    }
+
+    _activeDevice() {
+        return this._applet._output;
+    }
+
+    _lookupDevice(id) {
+        return this._control.lookup_output_id(id);
+    }
+
+    _changeDevice(device) {
+        this._control.change_output(device);
+    }
+
+    _deviceAddedSignal() {
+        return "output-added";
+    }
+
+    _deviceRemovedSignal() {
+        return "output-removed";
+    }
+
+    _activeDeviceSignal() {
+        return "active-output-update";
+    }
+}
+
+class InputDeviceItem extends DevicePickerItem {
+    _emptyLabelText() {
+        return "No input device";
+    }
+
+    _subtitleLabelText() {
+        return "Input device";
+    }
+
+    _fallbackIcon() {
+        return INPUT_DEVICE_FALLBACK_ICON;
+    }
+
+    _activeDevice() {
+        return this._applet._input;
+    }
+
+    _lookupDevice(id) {
+        return this._control.lookup_input_id(id);
+    }
+
+    _changeDevice(device) {
+        this._control.change_input(device);
+    }
+
+    _deviceAddedSignal() {
+        return "input-added";
+    }
+
+    _deviceRemovedSignal() {
+        return "input-removed";
+    }
+
+    _activeDeviceSignal() {
+        return "active-input-update";
+    }
+}
+
+module.exports = {
+    DevicePickerItem,
+    OutputDeviceItem,
+    InputDeviceItem
+};
