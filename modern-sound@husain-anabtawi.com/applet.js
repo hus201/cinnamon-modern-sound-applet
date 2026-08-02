@@ -5,6 +5,7 @@ const Main = imports.ui.main;
 const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
+const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
 const { MasterVolumeItem } = require("./widgets/master-volume-item");
 const { MicVolumeItem } = require("./widgets/mic-volume-item");
 const { OutputDeviceItem } = require("./widgets/output-device-item");
@@ -74,6 +75,7 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._control.open();
         this._setKeybinding();
+        connectIconScrollHandler(this);
         this.set_applet_icon_symbolic_name("audio-volume-high-symbolic");
         this.set_applet_tooltip(_("Sound"));
         global.log("[modern-sound] applet initialized");

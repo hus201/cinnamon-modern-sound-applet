@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APPLET_DIR="$ROOT/modern-sound@husain-anabtawi.com"
 
 echo "==> Syntax check (node)"
-for file in "$APPLET_DIR"/applet.js "$APPLET_DIR"/widgets/*.js; do
+for file in "$APPLET_DIR"/applet.js "$APPLET_DIR"/handlers/*.js "$APPLET_DIR"/widgets/*.js; do
   node --check "$file"
   echo "  ok $(basename "$file")"
 done

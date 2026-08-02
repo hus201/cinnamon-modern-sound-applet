@@ -34,6 +34,10 @@ Standard Cinnamon context menu only:
 
 Sound controls stay on left click; right click is for panel/applet management.
 
+### Scroll wheel — panel icon
+
+Scroll up or down on the sound icon in the panel to raise or lower master volume (5% per step), matching the behavior of the default Cinnamon sound applet.
+
 ### Design principles
 
 - **Hierarchy** — global volume → device → per-app controls
@@ -45,6 +49,8 @@ Sound controls stay on left click; right click is for panel/applet management.
 ```
 modern-sound@husain-anabtawi.com/
 ├── applet.js              # Main applet logic
+├── handlers/              # Panel icon event handlers
+│   └── on-icon-scroll-handler.js
 ├── widgets/               # Custom menu widgets
 │   ├── volume.js
 │   ├── device-display.js
@@ -120,6 +126,7 @@ Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
 | Block | Status |
 |-------|--------|
 | Master volume slider + percentage | Done |
+| Scroll wheel on panel icon adjusts master volume | Done |
 | Mic volume slider + percentage | Done |
 | Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
 | Output device picker | Done |

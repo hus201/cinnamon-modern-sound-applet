@@ -357,6 +357,39 @@ try {
     console.error(`  ✗ QuickActionsItem construction threw: ${e.message}`);
 }
 
+section("on-icon-scroll-handler");
+try {
+    const { adjustMasterVolume } = loadModule("handlers/on-icon-scroll-handler.js");
+    const appletModule = loadModule("applet.js");
+    const metadata = { uuid: "modern-sound@husain-anabtawi.com" };
+    const instance = appletModule.main(metadata, 3, 32, 2);
+    const output = instance._output;
+    const norm = instance._volumeNorm;
+    const step = norm * 0.05;
+
+    output.volume = norm / 2;
+    output.is_muted = false;
+    adjustMasterVolume(instance, 1);
+    assertEqual(output.volume, norm / 2 + step, "scroll up increases master volume by 5%");
+
+    adjustMasterVolume(instance, -1);
+    assertEqual(output.volume, norm / 2, "scroll down decreases master volume by 5%");
+
+    output.volume = step / 2;
+    output.is_muted = false;
+    adjustMasterVolume(instance, -1);
+    assertEqual(output.volume, 0, "scroll down at low volume clamps to zero");
+    assert(output.is_muted === true, "scroll down to zero mutes output");
+
+    output.volume = norm / 2;
+    output.is_muted = true;
+    adjustMasterVolume(instance, 1);
+    assert(output.is_muted === false, "scroll up unmutes output");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ on-icon-scroll-handler threw: ${e.message}`);
+}
+
 section("applet.js smoke test");
 try {
     const appletModule = loadModule("applet.js");
