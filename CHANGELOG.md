@@ -2,6 +2,20 @@
 
 All notable changes to **Modern Sound** are documented in this file.
 
+## [1.2.0] — 2026-08-03
+
+### Added
+
+- **Overamplification support** — when Cinnamon's *Allow volume above 100%* setting is enabled, master volume (menu slider, panel scroll) can go up to 150%.
+- **Panel icon tooltip** — hover the sound icon to see the current volume percentage (e.g. `Volume: 78%`), including values above 100% when overamplification is on.
+
+### Changed
+
+- Shared **`volumePercent`** utility for consistent percentage display across the panel tooltip, master slider, and mic slider.
+- Panel scroll volume uses shared **`adjustStreamVolume`** with a configurable max when overamplification is enabled.
+
+---
+
 ## [1.1.0] — 2026-08-02
 
 ### Added
