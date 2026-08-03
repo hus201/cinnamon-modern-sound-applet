@@ -73,7 +73,8 @@ const { applyDeviceIcon, deviceDisplayIcon } = loadModule("utils/device-icon-res
 const {
     VOLUME_ADJUSTMENT_STEP,
     snapVolumeToNorm,
-    adjustStreamVolume
+    adjustStreamVolume,
+    volumePercent
 } = loadModule("utils/volume-math.js");
 const { MasterVolumeItem, MicVolumeItem } = loadModule("widgets/stream-volume-item.js");
 const { OutputDeviceItem, InputDeviceItem } = loadModule("widgets/device-picker-item.js");
@@ -464,6 +465,10 @@ section("volume-math");
     assertEqual(snapVolumeToNorm(norm + 100, norm), norm, "snapVolumeToNorm snaps near norm to norm");
     assert(snapVolumeToNorm(norm / 2, norm) === norm / 2, "snapVolumeToNorm leaves distant values unchanged");
 
+    assertEqual(volumePercent(norm / 2, norm, false), 50, "volumePercent is 50 at half volume");
+    assertEqual(volumePercent(norm / 2, norm, true), 0, "volumePercent is 0 when muted");
+    assertEqual(volumePercent(Math.round(norm * 1.5), norm, false), 150, "volumePercent supports overamplification");
+
     stream.volume = norm / 2;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, 1);
@@ -562,6 +567,39 @@ try {
 } catch (e) {
     failed++;
     console.error(`  ✗ on-icon-scroll-handler threw: ${e.message}`);
+}
+
+section("applet panel tooltip");
+try {
+    const appletModule = loadModule("applet.js");
+    const metadata = { uuid: "modern-sound@husain-anabtawi.com" };
+    const instance = appletModule.main(metadata, 3, 32, 3);
+    const norm = instance._volumeNorm;
+
+    assertEqual(instance._appletTooltip, "Sound: 50%", "initial tooltip shows output volume percent");
+
+    instance._output.volume = norm;
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Sound: 100%", "tooltip shows 100% at full volume");
+
+    instance._output.is_muted = true;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Sound: 0%", "tooltip shows 0% when muted");
+
+    instance._allowOveramplification = true;
+    instance._masterVolumeMax = Math.round(norm * 1.5);
+    instance._output.volume = instance._masterVolumeMax;
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Sound: 150%", "tooltip shows overamplified volume");
+
+    instance._output = null;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Sound: 0%", "tooltip shows 0% without output");
+} catch (e) {
+    failed++;
+    console.error(`  ✗ applet panel tooltip threw: ${e.message}`);
 }
 
 section("applet.js smoke test");

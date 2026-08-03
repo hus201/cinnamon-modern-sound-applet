@@ -160,8 +160,13 @@ class IconApplet {
         this.actor = createActor("IconApplet");
     }
 
-    set_applet_icon_symbolic_name() {}
-    set_applet_tooltip() {}
+    set_applet_icon_symbolic_name(name) {
+        this._appletIconName = name;
+    }
+
+    set_applet_tooltip(text) {
+        this._appletTooltip = text;
+    }
 }
 
 class AppletPopupMenu {

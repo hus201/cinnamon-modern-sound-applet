@@ -1,6 +1,13 @@
 const VOLUME_ADJUSTMENT_STEP = 0.05;
 const MUTE_THRESHOLD = 0.005;
 
+function volumePercent(volume, norm, muted = false) {
+    if (muted)
+        return 0;
+    const targetNorm = norm || 1;
+    return Math.round((volume / targetNorm) * 100) || 0;
+}
+
 function snapVolumeToNorm(volume, norm) {
     const targetNorm = norm || 1;
     if (
@@ -44,6 +51,7 @@ function adjustStreamVolume(stream, norm, deltaSteps, maxVolume) {
 module.exports = {
     VOLUME_ADJUSTMENT_STEP,
     MUTE_THRESHOLD,
+    volumePercent,
     snapVolumeToNorm,
     adjustStreamVolume
 };
