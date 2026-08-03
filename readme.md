@@ -2,7 +2,7 @@
 
 A modern Cinnamon panel sound applet — compact by default, expandable when needed.
 
-![UI concept](docs/concept.png)
+![Modern Sound Applet](docs/screenshot.png)
 
 ## Concept
 
@@ -69,6 +69,7 @@ modern-sound@husain-anabtawi.com/
 ├── settings-schema.json   # Configurable settings
 └── stylesheet.css         # Theming (dark, blue accents)
 docs/
+├── screenshot.png         # Actual applet UI
 └── concept.png            # UI mockup
 tests/
 ├── mocks/cinnamon.js      # Offline Cinnamon API mocks
@@ -83,8 +84,6 @@ tests/
 2. Go to **Download**
 3. Search for **Modern Sound** and install
 4. Add it to your panel
-
-Reload after updates: `Alt+F2` → `r` → Enter
 
 ## Development (optional)
 
@@ -124,17 +123,3 @@ Optional: install `gjs` (`sudo apt install gjs`) to run the same tests under GJS
 ## Debug
 
 Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
-
-## Implementation status (block by block)
-
-| Block | Status |
-|-------|--------|
-| Master volume slider + percentage | Done |
-| Scroll wheel on panel icon adjusts master volume | Done |
-| Mic volume slider + percentage | Done |
-| Quick actions (Mute Sound · Mute Mic · Open Settings) | Done |
-| Output device picker | Done |
-| Input device picker | Done |
-| Hide single input/output device (setting) | Done |
-| Applications / per-app volume | Done |
-| Media player controls (MPRIS) | Planned |
