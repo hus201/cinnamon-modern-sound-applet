@@ -189,7 +189,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         }
 
         this.set_applet_icon_symbolic_name(icon);
-        this.set_applet_tooltip(`${_("Sound")}: ${percent}%`);
+        this.set_applet_tooltip(`${_("Volume")}: ${percent}%`);
     }
 
     _setKeybinding() {

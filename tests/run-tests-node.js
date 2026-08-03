@@ -576,27 +576,27 @@ try {
     const instance = appletModule.main(metadata, 3, 32, 3);
     const norm = instance._volumeNorm;
 
-    assertEqual(instance._appletTooltip, "Sound: 50%", "initial tooltip shows output volume percent");
+    assertEqual(instance._appletTooltip, "Volume: 50%", "initial tooltip shows output volume percent");
 
     instance._output.volume = norm;
     instance._output.is_muted = false;
     instance._updatePanelIcon();
-    assertEqual(instance._appletTooltip, "Sound: 100%", "tooltip shows 100% at full volume");
+    assertEqual(instance._appletTooltip, "Volume: 100%", "tooltip shows 100% at full volume");
 
     instance._output.is_muted = true;
     instance._updatePanelIcon();
-    assertEqual(instance._appletTooltip, "Sound: 0%", "tooltip shows 0% when muted");
+    assertEqual(instance._appletTooltip, "Volume: 0%", "tooltip shows 0% when muted");
 
     instance._allowOveramplification = true;
     instance._masterVolumeMax = Math.round(norm * 1.5);
     instance._output.volume = instance._masterVolumeMax;
     instance._output.is_muted = false;
     instance._updatePanelIcon();
-    assertEqual(instance._appletTooltip, "Sound: 150%", "tooltip shows overamplified volume");
+    assertEqual(instance._appletTooltip, "Volume: 150%", "tooltip shows overamplified volume");
 
     instance._output = null;
     instance._updatePanelIcon();
-    assertEqual(instance._appletTooltip, "Sound: 0%", "tooltip shows 0% without output");
+    assertEqual(instance._appletTooltip, "Volume: 0%", "tooltip shows 0% without output");
 } catch (e) {
     failed++;
     console.error(`  ✗ applet panel tooltip threw: ${e.message}`);
