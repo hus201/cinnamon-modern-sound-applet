@@ -73,7 +73,7 @@ docs/
 └── concept.png            # UI mockup
 tests/
 ├── mocks/cinnamon.js      # Offline Cinnamon API mocks
-└── run-tests-node.js      # Unit/smoke tests (via ./test.sh)
+└── run-tests.js           # Unit/smoke tests (via ./test.sh, requires gjs)
 ```
 
 ## Install
@@ -110,16 +110,12 @@ Then re-download or update **Modern Sound** from Applets → Download if needed.
 
 ## Test before reload
 
-Run offline tests (syntax + mocked Cinnamon runtime) without reloading the panel:
+Requires `gjs` (`sudo apt install gjs` on Debian/Ubuntu/Mint).
+
+Run offline tests (mocked Cinnamon runtime under GJS) without reloading the panel:
 
 ```bash
 ./test.sh
 ```
 
-This checks JS syntax, JSON schemas, and smoke-tests widgets/applet logic with mocked `imports.ui` / `imports.gi` APIs. If all tests pass, it is safe to restart Cinnamon.
-
-Optional: install `gjs` (`sudo apt install gjs`) to run the same tests under GJS instead of Node.
-
-## Debug
-
-Logs: `~/.xsession-errors`, `~/.cinnamon/glass.log`
+This checks JSON schemas and smoke-tests widgets/applet logic with mocked `imports.ui` / `imports.gi` APIs. If all tests pass, it is safe to restart Cinnamon.

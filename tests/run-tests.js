@@ -8,21 +8,115 @@ const System = imports.system;
 const REPO_ROOT = GLib.getenv("APPLET_TEST_ROOT") ||
     GLib.path_get_dirname(typeof __dirname !== "undefined" ? __dirname : imports.searchPath[0]);
 const APPLET_DIR = GLib.build_filenamev([REPO_ROOT, "modern-sound@husain-anabtawi.com"]);
+const RUN_TESTS_PATH = GLib.build_filenamev([REPO_ROOT, "tests", "run-tests.js"]);
+
+(function setupRequire() {
+    const cache = {};
+
+    function readFile(filePath) {
+        let path = filePath;
+        if (!path.endsWith(".js"))
+            path += ".js";
+
+        const [ok, contents] = GLib.file_get_contents(path);
+        if (!ok)
+            throw new Error(`Cannot load module: ${path}`);
+
+        let source;
+        if (typeof contents === "string") {
+            source = contents;
+        } else if (typeof TextDecoder !== "undefined") {
+            source = new TextDecoder("utf-8").decode(contents);
+        } else if (imports.byteArray) {
+            source = imports.byteArray.toString(contents);
+        } else {
+            source = String.fromCharCode.apply(null, contents);
+        }
+
+        if (source.startsWith("#!"))
+            source = source.replace(/^[^\n]*\n/, "");
+
+        return source;
+    }
+
+    function resolveModule(request, parentPath) {
+        if (!request.startsWith("."))
+            throw new Error(`Unsupported require: ${request}`);
+
+        if (parentPath && parentPath.indexOf(APPLET_DIR) === 0) {
+            return GLib.build_filenamev([APPLET_DIR, request.replace(/^\.\//, "")]);
+        }
+
+        const parentDir = GLib.path_get_dirname(parentPath || RUN_TESTS_PATH);
+        const joined = GLib.build_filenamev([parentDir, request]);
+        return GLib.canonicalize_filename(joined, parentDir);
+    }
+
+    function loadModule(filePath, parentPath) {
+        let resolved = filePath;
+        if (!resolved.endsWith(".js"))
+            resolved += ".js";
+
+        if (cache[resolved])
+            return cache[resolved].exports;
+
+        const source = readFile(resolved);
+        const module = { exports: {} };
+        const exports = module.exports;
+
+        function localRequire(request) {
+            const nextPath = resolveModule(request, resolved);
+            return loadModule(nextPath, resolved);
+        }
+
+        const evaluator = new Function(
+            "imports", "_", "global", "module", "exports", "require", "print", "printerr",
+            `${source}\n//# sourceURL=${resolved}`
+        );
+
+        evaluator(
+            globalThis.imports || imports,
+            globalThis._ || ((text) => text),
+            globalThis.global || globalThis,
+            module,
+            exports,
+            localRequire,
+            print,
+            printerr
+        );
+
+        cache[resolved] = module;
+        return module.exports;
+    }
+
+    globalThis.require = (request) => {
+        const resolved = resolveModule(request, RUN_TESTS_PATH);
+        return loadModule(resolved, RUN_TESTS_PATH);
+    };
+})();
 
 imports.searchPath.unshift(REPO_ROOT);
 imports.searchPath.unshift(APPLET_DIR);
 
-const { setupCinnamonMocks, createMockStream, createMockOutput, createMockAppStream } = require("./mocks/cinnamon");
+const { setupCinnamonMocks, createMockStream, createMockOutput, createMockInput, createMockAppStream } = require("./mocks/cinnamon");
 setupCinnamonMocks();
 
 const { volumeIconName, micIconName } = require("./../modern-sound@husain-anabtawi.com/utils/volume-icon-resolver");
 const { applyDeviceIcon, deviceDisplayIcon } = require("./../modern-sound@husain-anabtawi.com/utils/device-icon-resolver");
+const {
+    VOLUME_ADJUSTMENT_STEP,
+    snapVolumeToNorm,
+    adjustStreamVolume,
+    volumePercent
+} = require("./../modern-sound@husain-anabtawi.com/utils/volume-math");
 const { MasterVolumeItem, MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/stream-volume-item");
 const { OutputDeviceItem, InputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/device-picker-item");
 const { ApplicationsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/applications-item");
 const { AppStreamItem } = require("./../modern-sound@husain-anabtawi.com/widgets/app-stream-item");
 const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/app-display");
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quick-actions-item");
+const { onOveramplificationChange } = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
+const { adjustMasterVolume } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
 
 let passed = 0;
 let failed = 0;
@@ -45,17 +139,17 @@ function section(title) {
     print(`\n${title}`);
 }
 
-function createMockApplet(output) {
+function createMockApplet(output, input, options = {}) {
+    const volumeNorm = options.volumeNorm ?? 65536;
+    const allowOveramplification = options.allowOveramplification ?? false;
     return {
-        _volumeNorm: 65536,
-        _allowOveramplification: false,
-        _masterVolumeMax: 65536,
+        _volumeNorm: volumeNorm,
+        _allowOveramplification: allowOveramplification,
+        _masterVolumeMax: allowOveramplification ? Math.round(volumeNorm * 1.5) : volumeNorm,
         _output: output || null,
+        _input: input || null,
         _updatePanelIcon() {},
-        _syncMuteStates() {},
-        toggleSoundMute() {},
-        toggleInputMute() {},
-        openSettings() {}
+        _syncMuteStates() {}
     };
 }
 
@@ -146,6 +240,22 @@ if (volumeItem) {
     assert(stream.is_muted === true, "icon click mutes");
     volumeItem._icon.emit("button-press-event", { get_button: () => 1 });
     assert(stream.is_muted === false, "icon click again unmutes");
+}
+
+section("MasterVolumeItem overamplification");
+{
+    const norm = 65536;
+    const max = Math.round(norm * 1.5);
+    const applet = createMockApplet(null, null, { allowOveramplification: true });
+    const item = new MasterVolumeItem(applet);
+    const stream = createMockStream({ volume: max, volume_max: norm, is_muted: false });
+    item.connectStream(stream);
+    assertEqual(item._percentLabel.text, "150%", "sync shows 150% at max overamplified volume");
+    assertEqual(item._icon.icon_name, "xsi-audio-volume-high", "sync picks high icon at max");
+
+    item._onChanged(2 / 3);
+    assertEqual(stream.volume, norm, "slider at 100% mark sets norm volume");
+    assertEqual(item._percentLabel.text, "100%", "100% mark shows 100% label");
 }
 
 section("MicVolumeItem construction");
@@ -247,9 +357,82 @@ try {
     item.bindControl(control);
     control.addOutput(0, device);
     assert(item._chevron.visible === false, "hides chevron with one device");
+    assert(item.actor.visible === true, "shows single output device by default");
+
+    item._applet.hideSingleOutputDevice = true;
+    item._updateVisibility();
+    assert(item.actor.visible === false, "hides single output device when setting enabled");
+
+    control.addOutput(1, createMockOutput(1, "HDMI", "Digital"));
+    assert(item.actor.visible === true, "shows output device row with multiple devices");
 } catch (e) {
     failed++;
     printerr(`  ✗ OutputDeviceItem single device threw: ${e}`);
+}
+
+section("InputDeviceItem construction");
+let inputItem;
+try {
+    inputItem = new InputDeviceItem(createMockApplet());
+    assert(inputItem._nameLabel !== undefined, "creates input device name label");
+    assert(inputItem._chevron !== undefined, "creates input chevron");
+    assertEqual(inputItem._nameLabel.text, "No input device", "default name when no input");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ InputDeviceItem construction threw: ${e}`);
+}
+
+section("InputDeviceItem device list");
+if (inputItem) {
+    const builtIn = createMockInput(0, "Built-in Microphone", "Analog Mono");
+    const usbMic = createMockInput(1, "USB Microphone", "Digital Mono");
+    const control = createMockControl();
+    const applet = createMockApplet(null, builtIn);
+
+    inputItem = new InputDeviceItem(applet);
+    inputItem.bindControl(control);
+    control.addInput(0, builtIn);
+    control.addInput(1, usbMic);
+
+    assertEqual(inputItem._devices.length, 2, "tracks two input devices");
+    assert(inputItem._chevron.visible === true, "shows input chevron with multiple devices");
+    assertEqual(inputItem._nameLabel.text, "Built-in Microphone", "header shows active input device");
+    assertEqual(inputItem._subtitleLabel.text, "Input device", "header shows input device label");
+
+    inputItem._syncActiveDevice();
+    const activeRow = inputItem._devices.find((entry) => entry.id === 0);
+    assert(activeRow !== undefined, "finds active input device row");
+    assertEqual(activeRow.row._radio.icon_name, "radio-checked-symbolic", "marks active input row");
+
+    const usbRow = inputItem._devices.find((entry) => entry.id === 1);
+    assertEqual(usbRow.row._radio.icon_name, "radio-off-symbolic", "inactive input row is off");
+
+    usbRow.row.emit("button-press-event", { get_button: () => 1 });
+    assert(control._activeInput === usbMic, "input row click switches device");
+    assertEqual(control._activeInput.description, "USB Microphone", "active input updated");
+
+    inputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(inputItem._listBox.visible === true, "input header expands device list");
+    inputItem._header.emit("button-release-event", { get_button: () => 1 });
+    assert(inputItem._listBox.visible === false, "input header collapses device list");
+}
+
+section("InputDeviceItem single device");
+try {
+    const device = createMockInput(0, "Headset Mic", "Analog Mono");
+    const control = createMockControl();
+    const item = new InputDeviceItem(createMockApplet(null, device));
+    item.bindControl(control);
+    control.addInput(0, device);
+    assert(item._chevron.visible === false, "hides input chevron with one device");
+    assert(item.actor.visible === true, "shows single input device by default");
+
+    item._applet.hideSingleInputDevice = true;
+    item._updateVisibility();
+    assert(item.actor.visible === false, "hides single input device when setting enabled");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ InputDeviceItem single device threw: ${e}`);
 }
 
 section("appStreamLabel");
@@ -330,6 +513,150 @@ try {
     printerr(`  ✗ QuickActionsItem construction threw: ${e}`);
 }
 
+section("volume-math");
+{
+    const norm = 65536;
+    const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+
+    assertEqual(snapVolumeToNorm(norm, norm), norm, "snapVolumeToNorm keeps exact norm");
+    assertEqual(snapVolumeToNorm(norm + 100, norm), norm, "snapVolumeToNorm snaps near norm to norm");
+    assert(snapVolumeToNorm(norm / 2, norm) === norm / 2, "snapVolumeToNorm leaves distant values unchanged");
+
+    assertEqual(volumePercent(norm / 2, norm, false), 50, "volumePercent is 50 at half volume");
+    assertEqual(volumePercent(norm / 2, norm, true), 0, "volumePercent is 0 when muted");
+    assertEqual(volumePercent(Math.round(norm * 1.5), norm, false), 150, "volumePercent supports overamplification");
+
+    stream.volume = norm / 2;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, 1);
+    assert(stream.volume > norm / 2, "adjustStreamVolume increases volume on scroll up");
+
+    adjustStreamVolume(stream, norm, -1);
+    assertEqual(stream.volume, norm / 2, "adjustStreamVolume decreases volume on scroll down");
+
+    stream.volume = norm;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, 1, Math.round(norm * 1.5));
+    assert(stream.volume > norm, "adjustStreamVolume allows volume above 100% with overamplification");
+
+    stream.volume = norm * 0.02;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, -1);
+    assertEqual(stream.volume, 0, "adjustStreamVolume clamps to zero");
+    assert(stream.is_muted === true, "adjustStreamVolume mutes at zero");
+}
+
+section("on-overamplification-change");
+{
+    const norm = 65536;
+    const output = createMockStream({ volume: Math.round(norm * 1.5), volume_max: norm, is_muted: false });
+    let panelIconUpdated = false;
+    let masterSynced = false;
+    const applet = {
+        _volumeNorm: norm,
+        _allowOveramplification: false,
+        _masterVolumeMax: norm,
+        _output: output,
+        _soundSettings: {
+            get_boolean() {
+                return applet._allowOveramplification;
+            }
+        },
+        _masterVolume: { _sync() { masterSynced = true; } },
+        _updatePanelIcon() { panelIconUpdated = true; }
+    };
+
+    assertEqual(applet._masterVolumeMax, norm, "_masterVolumeMax is norm when disabled");
+
+    applet._allowOveramplification = true;
+    onOveramplificationChange(applet);
+    assertEqual(applet._masterVolumeMax, Math.round(norm * 1.5), "_masterVolumeMax is 150% when enabled");
+    assertEqual(output.volume, Math.round(norm * 1.5), "enabled change keeps volume above 100%");
+    assert(masterSynced, "enabled change syncs master volume");
+    assert(panelIconUpdated, "enabled change updates panel icon");
+
+    masterSynced = false;
+    panelIconUpdated = false;
+    applet._allowOveramplification = false;
+    onOveramplificationChange(applet);
+    assertEqual(applet._masterVolumeMax, norm, "_masterVolumeMax returns to norm when disabled");
+    assertEqual(output.volume, norm, "disabled change clamps volume to 100%");
+    assert(masterSynced, "disabled change syncs master volume");
+    assert(panelIconUpdated, "disabled change updates panel icon");
+}
+
+section("on-icon-scroll-handler");
+try {
+    const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");
+    const metadata = { uuid: "modern-sound@husain-anabtawi.com" };
+    const instance = appletModule.main(metadata, 3, 32, 2);
+    const output = instance._output;
+    const norm = instance._volumeNorm;
+    const step = norm * VOLUME_ADJUSTMENT_STEP;
+
+    output.volume = norm / 2;
+    output.is_muted = false;
+    adjustMasterVolume(instance, 1);
+    assertEqual(output.volume, norm / 2 + step, "scroll up increases master volume by 5%");
+
+    adjustMasterVolume(instance, -1);
+    assertEqual(output.volume, norm / 2, "scroll down decreases master volume by 5%");
+
+    output.volume = step / 2;
+    output.is_muted = false;
+    adjustMasterVolume(instance, -1);
+    assertEqual(output.volume, 0, "scroll down at low volume clamps to zero");
+    assert(output.is_muted === true, "scroll down to zero mutes output");
+
+    output.volume = norm / 2;
+    output.is_muted = true;
+    adjustMasterVolume(instance, 1);
+    assert(output.is_muted === false, "scroll up unmutes output");
+
+    instance._allowOveramplification = true;
+    instance._masterVolumeMax = Math.round(norm * 1.5);
+    output.volume = norm;
+    output.is_muted = false;
+    adjustMasterVolume(instance, 1);
+    assert(output.volume > norm, "scroll up allows overamplification when enabled");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);
+}
+
+section("applet panel tooltip");
+try {
+    const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");
+    const metadata = { uuid: "modern-sound@husain-anabtawi.com" };
+    const instance = appletModule.main(metadata, 3, 32, 3);
+    const norm = instance._volumeNorm;
+
+    assertEqual(instance._appletTooltip, "Volume: 50%", "initial tooltip shows output volume percent");
+
+    instance._output.volume = norm;
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Volume: 100%", "tooltip shows 100% at full volume");
+
+    instance._output.is_muted = true;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Volume: 0%", "tooltip shows 0% when muted");
+
+    instance._allowOveramplification = true;
+    instance._masterVolumeMax = Math.round(norm * 1.5);
+    instance._output.volume = instance._masterVolumeMax;
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Volume: 150%", "tooltip shows overamplified volume");
+
+    instance._output = null;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Volume: 0%", "tooltip shows 0% without output");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ applet panel tooltip threw: ${e}`);
+}
+
 section("applet.js smoke test");
 try {
     const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");
@@ -340,10 +667,11 @@ try {
     assert(instance !== null && instance !== undefined, "main() returns applet instance");
     assert(instance._masterVolume !== undefined, "applet has master volume");
     assert(instance._micVolume !== undefined, "applet has mic volume");
+    assert(instance._inputDevice !== undefined, "applet has input device switcher");
     assert(instance._outputDevice !== undefined, "applet has output device switcher");
     assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
-    assert(instance._menu._items.length >= 7, "menu has volume, mic, separators, output, apps, and actions");
+    assert(instance._menu._items.length >= 8, "menu has volume, mic, output, input, separators, apps, and actions");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);
