@@ -1,12 +1,23 @@
 const VOLUME_ADJUSTMENT_STEP = 0.05;
 const MUTE_THRESHOLD = 0.005;
 
-function adjustStreamVolume(stream, norm, deltaSteps) {
+function snapVolumeToNorm(volume, norm) {
+    const targetNorm = norm || 1;
+    if (
+        volume !== targetNorm &&
+        volume > targetNorm * (1 - VOLUME_ADJUSTMENT_STEP / 2) &&
+        volume < targetNorm * (1 + VOLUME_ADJUSTMENT_STEP / 2)
+    )
+        return targetNorm;
+    return volume;
+}
+
+function adjustStreamVolume(stream, norm, deltaSteps, maxVolume) {
     if (!stream || !deltaSteps)
         return false;
 
     const targetNorm = norm || 1;
-    const max = stream.volume_max || targetNorm;
+    const max = maxVolume ?? stream.volume_max ?? targetNorm;
     const step = targetNorm * VOLUME_ADJUSTMENT_STEP;
     const currentVolume = stream.volume;
 
@@ -17,22 +28,12 @@ function adjustStreamVolume(stream, norm, deltaSteps) {
             stream.volume = 0;
             if (!prevMuted)
                 stream.change_is_muted(true);
-        } else if (
-            stream.volume !== targetNorm &&
-            stream.volume > targetNorm * (1 - VOLUME_ADJUSTMENT_STEP / 2) &&
-            stream.volume < targetNorm * (1 + VOLUME_ADJUSTMENT_STEP / 2)
-        ) {
-            stream.volume = targetNorm;
+        } else {
+            stream.volume = snapVolumeToNorm(stream.volume, targetNorm);
         }
     } else {
         stream.volume = Math.min(max, currentVolume + deltaSteps * step);
-        if (
-            stream.volume !== targetNorm &&
-            stream.volume > targetNorm * (1 - VOLUME_ADJUSTMENT_STEP / 2) &&
-            stream.volume < targetNorm * (1 + VOLUME_ADJUSTMENT_STEP / 2)
-        ) {
-            stream.volume = targetNorm;
-        }
+        stream.volume = snapVolumeToNorm(stream.volume, targetNorm);
         stream.change_is_muted(false);
     }
 
@@ -43,5 +44,6 @@ function adjustStreamVolume(stream, norm, deltaSteps) {
 module.exports = {
     VOLUME_ADJUSTMENT_STEP,
     MUTE_THRESHOLD,
+    snapVolumeToNorm,
     adjustStreamVolume
 };

@@ -72,6 +72,7 @@ const { volumeIconName, micIconName } = loadModule("utils/volume-icon-resolver.j
 const { applyDeviceIcon, deviceDisplayIcon } = loadModule("utils/device-icon-resolver.js");
 const {
     VOLUME_ADJUSTMENT_STEP,
+    snapVolumeToNorm,
     adjustStreamVolume
 } = loadModule("utils/volume-math.js");
 const { MasterVolumeItem, MicVolumeItem } = loadModule("widgets/stream-volume-item.js");
@@ -81,9 +82,13 @@ const { AppStreamItem } = loadModule("widgets/app-stream-item.js");
 const { appStreamLabel, applyAppStreamIcon } = loadModule("widgets/app-display.js");
 const { QuickActionsItem } = loadModule("widgets/quick-actions-item.js");
 
-function createMockApplet(output, input) {
+function createMockApplet(output, input, options = {}) {
+    const volumeNorm = options.volumeNorm ?? 65536;
+    const allowOveramplification = options.allowOveramplification ?? false;
     return {
-        _volumeNorm: 65536,
+        _volumeNorm: volumeNorm,
+        _allowOveramplification: allowOveramplification,
+        _masterVolumeMax: allowOveramplification ? Math.round(volumeNorm * 1.5) : volumeNorm,
         _output: output || null,
         _input: input || null,
         _updatePanelIcon() {},
@@ -178,6 +183,22 @@ if (volumeItem) {
     assert(stream.is_muted === true, "icon click mutes");
     volumeItem._icon.emit("button-press-event", { get_button: () => 1 });
     assert(stream.is_muted === false, "icon click again unmutes");
+}
+
+section("MasterVolumeItem overamplification");
+{
+    const norm = 65536;
+    const max = Math.round(norm * 1.5);
+    const applet = createMockApplet(null, null, { allowOveramplification: true });
+    const item = new MasterVolumeItem(applet);
+    const stream = createMockStream({ volume: max, volume_max: norm, is_muted: false });
+    item.connectStream(stream);
+    assertEqual(item._percentLabel.text, "150%", "sync shows 150% at max overamplified volume");
+    assertEqual(item._icon.icon_name, "xsi-audio-volume-high", "sync picks high icon at max");
+
+    item._onChanged(2 / 3);
+    assertEqual(stream.volume, norm, "slider at 100% mark sets norm volume");
+    assertEqual(item._percentLabel.text, "100%", "100% mark shows 100% label");
 }
 
 section("MicVolumeItem construction");
@@ -439,6 +460,10 @@ section("volume-math");
     const norm = 65536;
     const stream = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
 
+    assertEqual(snapVolumeToNorm(norm, norm), norm, "snapVolumeToNorm keeps exact norm");
+    assertEqual(snapVolumeToNorm(norm + 100, norm), norm, "snapVolumeToNorm snaps near norm to norm");
+    assert(snapVolumeToNorm(norm / 2, norm) === norm / 2, "snapVolumeToNorm leaves distant values unchanged");
+
     stream.volume = norm / 2;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, 1);
@@ -447,11 +472,56 @@ section("volume-math");
     adjustStreamVolume(stream, norm, -1);
     assertEqual(stream.volume, norm / 2, "adjustStreamVolume decreases volume on scroll down");
 
+    stream.volume = norm;
+    stream.is_muted = false;
+    adjustStreamVolume(stream, norm, 1, Math.round(norm * 1.5));
+    assert(stream.volume > norm, "adjustStreamVolume allows volume above 100% with overamplification");
+
     stream.volume = norm * 0.02;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, -1);
     assertEqual(stream.volume, 0, "adjustStreamVolume clamps to zero");
     assert(stream.is_muted === true, "adjustStreamVolume mutes at zero");
+}
+
+section("on-overamplification-change");
+{
+    const { onOveramplificationChange } = loadModule("handlers/on-overamplification-change.js");
+    const norm = 65536;
+    const output = createMockStream({ volume: Math.round(norm * 1.5), volume_max: norm, is_muted: false });
+    let panelIconUpdated = false;
+    let masterSynced = false;
+    const applet = {
+        _volumeNorm: norm,
+        _allowOveramplification: false,
+        _masterVolumeMax: norm,
+        _output: output,
+        _soundSettings: {
+            get_boolean() {
+                return applet._allowOveramplification;
+            }
+        },
+        _masterVolume: { _sync() { masterSynced = true; } },
+        _updatePanelIcon() { panelIconUpdated = true; }
+    };
+
+    assertEqual(applet._masterVolumeMax, norm, "_masterVolumeMax is norm when disabled");
+
+    applet._allowOveramplification = true;
+    onOveramplificationChange(applet);
+    assertEqual(applet._masterVolumeMax, Math.round(norm * 1.5), "_masterVolumeMax is 150% when enabled");
+    assertEqual(output.volume, Math.round(norm * 1.5), "enabled change keeps volume above 100%");
+    assert(masterSynced, "enabled change syncs master volume");
+    assert(panelIconUpdated, "enabled change updates panel icon");
+
+    masterSynced = false;
+    panelIconUpdated = false;
+    applet._allowOveramplification = false;
+    onOveramplificationChange(applet);
+    assertEqual(applet._masterVolumeMax, norm, "_masterVolumeMax returns to norm when disabled");
+    assertEqual(output.volume, norm, "disabled change clamps volume to 100%");
+    assert(masterSynced, "disabled change syncs master volume");
+    assert(panelIconUpdated, "disabled change updates panel icon");
 }
 
 section("on-icon-scroll-handler");
@@ -482,6 +552,13 @@ try {
     output.is_muted = true;
     adjustMasterVolume(instance, 1);
     assert(output.is_muted === false, "scroll up unmutes output");
+
+    instance._allowOveramplification = true;
+    instance._masterVolumeMax = Math.round(norm * 1.5);
+    output.volume = norm;
+    output.is_muted = false;
+    adjustMasterVolume(instance, 1);
+    assert(output.volume > norm, "scroll up allows overamplification when enabled");
 } catch (e) {
     failed++;
     console.error(`  ✗ on-icon-scroll-handler threw: ${e.message}`);

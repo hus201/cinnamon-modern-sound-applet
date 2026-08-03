@@ -6,6 +6,7 @@ const Util = imports.misc.util;
 const Cvc = imports.gi.Cvc;
 
 const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
+const { connectOveramplificationHandler } = require("./handlers/on-overamplification-change");
 const { MasterVolumeItem, MicVolumeItem } = require("./widgets/stream-volume-item");
 const { InputDeviceItem, OutputDeviceItem } = require("./widgets/device-picker-item");
 const { ApplicationsItem } = require("./widgets/applications-item");
@@ -52,6 +53,8 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._masterVolume = new MasterVolumeItem(this);
         this._menu.addMenuItem(this._masterVolume);
+
+        connectOveramplificationHandler(this);
 
         this._micVolume = new MicVolumeItem(this);
         this._menu.addMenuItem(this._micVolume);
@@ -167,8 +170,7 @@ class ModernSoundApplet extends Applet.IconApplet {
             return;
         }
 
-        const norm = this._volumeNorm || 1;
-        const max = this._output.volume_max || norm;
+        const max = this._masterVolumeMax;
         const volume = this._output.is_muted ? 0 : this._output.volume;
         const ratio = volume / max;
 

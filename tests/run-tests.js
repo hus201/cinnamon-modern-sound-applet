@@ -48,6 +48,8 @@ function section(title) {
 function createMockApplet(output) {
     return {
         _volumeNorm: 65536,
+        _allowOveramplification: false,
+        _masterVolumeMax: 65536,
         _output: output || null,
         _updatePanelIcon() {},
         _syncMuteStates() {},

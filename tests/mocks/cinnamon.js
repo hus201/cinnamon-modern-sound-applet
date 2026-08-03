@@ -549,12 +549,24 @@ function setupCinnamonMocks() {
             },
             Gio: {
                 Settings: class {
-                    constructor() {}
-                    connect() {
+                    constructor() {
+                        this._allowAmplified = false;
+                        this._handlers = {};
+                    }
+                    connect(signal, handler) {
+                        this._handlers[signal] = handler;
                         return 1;
                     }
-                    get_boolean() {
+                    get_boolean(key) {
+                        if (key === "allow-amplified-volume")
+                            return this._allowAmplified;
                         return false;
+                    }
+                    setAllowAmplified(value) {
+                        this._allowAmplified = value;
+                        const handler = this._handlers["changed::allow-amplified-volume"];
+                        if (handler)
+                            handler();
                     }
                 },
                 ThemedIcon: {
