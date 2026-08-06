@@ -39,7 +39,12 @@ Sound controls stay on left click; right click is for panel/applet management.
 
 ### Scroll wheel — panel icon
 
-Scroll up or down on the sound icon in the panel to raise or lower master volume (5% per step), matching the behavior of the default Cinnamon sound applet.
+| Action | Effect |
+|--------|--------|
+| **Scroll** | Output volume up/down |
+| **Shift + scroll** | Mic volume up/down |
+
+Scroll step (1–10%), invert direction, and optional OSD are configurable in **Configure… → Panel** and **Sound Change Effects**.
 
 ### Design principles
 
@@ -53,11 +58,15 @@ Scroll up or down on the sound icon in the panel to raise or lower master volume
 modern-sound@husain-anabtawi.com/
 ├── applet.js              # Main applet logic
 ├── handlers/              # Panel icon event handlers
-│   └── on-icon-scroll-handler.js
+│   ├── on-icon-scroll-handler.js
+│   ├── on-icon-middle-click-handler.js
+│   └── on-overamplification-change.js
 ├── utils/                 # Shared helpers
 │   ├── device-icon-resolver.js
 │   ├── volume-icon-resolver.js
-│   └── volume-math.js
+│   ├── volume-math.js
+│   ├── volume-osd.js
+│   └── mpris-playback.js
 ├── widgets/               # Custom menu widgets
 │   ├── stream-volume-item.js
 │   ├── device-picker-item.js
@@ -67,7 +76,7 @@ modern-sound@husain-anabtawi.com/
 │   └── quick-actions-item.js
 ├── metadata.json          # Applet identity (required)
 ├── settings-schema.json   # Configurable settings
-└── stylesheet.css         # Theming (dark, blue accents)
+└── stylesheet.css         # Layout and spacing (colors from shell theme)
 docs/
 ├── screenshot.png         # Actual applet UI
 └── concept.png            # UI mockup
