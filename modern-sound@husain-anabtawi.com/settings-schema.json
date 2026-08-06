@@ -35,6 +35,15 @@
         "default": true,
         "description": "Show volume in tooltip"
     },
+    "scrollStep": {
+        "type": "spinbutton",
+        "default": 5,
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "units": "%",
+        "description": "Volume scroll step"
+    },
     "section-sound": {
         "type": "section",
         "description": "Sound Change Effects"

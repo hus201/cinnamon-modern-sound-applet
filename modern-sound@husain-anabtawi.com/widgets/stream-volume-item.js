@@ -3,7 +3,7 @@ const Main = imports.ui.main;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 
-const { MUTE_THRESHOLD, snapVolumeToNorm, volumePercent } = require("./utils/volume-math");
+const { MUTE_THRESHOLD, snapVolumeToNorm, volumePercent, sliderScrollStepRatio, scrollStepFraction } = require("./utils/volume-math");
 const { volumeIconName, micIconName } = require("./utils/volume-icon-resolver");
 
 const LEVEL_SLIDER_WIDTH = 140;
@@ -128,6 +128,26 @@ class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
         return Math.min(1, volume / max);
     }
 
+    _sliderScrollStepRatio() {
+        const norm = this._volumeNorm() || 1;
+        return sliderScrollStepRatio(norm, this._streamVolumeMax(norm), this._applet.scrollStep);
+    }
+
+    _onScrollEvent(_actor, event) {
+        const direction = event.get_scroll_direction();
+        if (direction === Clutter.ScrollDirection.SMOOTH)
+            return;
+
+        const step = this._sliderScrollStepRatio();
+        if (direction === Clutter.ScrollDirection.DOWN)
+            this._value = Math.max(0, this._value - step);
+        else if (direction === Clutter.ScrollDirection.UP)
+            this._value = Math.min(1, this._value + step);
+
+        this._slider.queue_repaint();
+        this.emit("value-changed", this._value);
+    }
+
     _setSliderValue(value) {
         this._updating = true;
         this.setValue(value);
@@ -156,7 +176,8 @@ class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
 
         const norm = this._volumeNorm() || 1;
         const max = this._streamVolumeMax(norm);
-        const volume = snapVolumeToNorm(value * max, norm);
+        const stepFraction = scrollStepFraction(this._applet.scrollStep);
+        const volume = snapVolumeToNorm(value * max, norm, stepFraction);
         const muted = value < MUTE_THRESHOLD;
         const percent = volumePercent(volume, norm, muted);
 

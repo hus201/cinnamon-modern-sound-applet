@@ -4,9 +4,17 @@ const Clutter = imports.gi.Clutter;
 const { adjustStreamVolume } = require("./utils/volume-math");
 const { showVolumeOsd, showMicOsd } = require("./utils/volume-osd");
 const { isShiftPressed } = require("./handlers/on-icon-middle-click-handler");
+const { scrollStepPercent } = require("./utils/volume-math");
 
 function adjustMasterVolume(applet, deltaSteps) {
-    if (!adjustStreamVolume(applet._output, applet._volumeNorm, deltaSteps, applet._masterVolumeMax))
+    const stepPercent = scrollStepPercent(applet.scrollStep);
+    if (!adjustStreamVolume(
+        applet._output,
+        applet._volumeNorm,
+        deltaSteps,
+        applet._masterVolumeMax,
+        stepPercent
+    ))
         return false;
 
     if (applet.showVolumeOsdOnScroll !== false)
@@ -21,7 +29,8 @@ function adjustMasterVolume(applet, deltaSteps) {
 function adjustMicVolume(applet, deltaSteps) {
     const norm = applet._volumeNorm;
     const max = applet._input ? (applet._input.volume_max || norm) : norm;
-    if (!adjustStreamVolume(applet._input, norm, deltaSteps, max))
+    const stepPercent = scrollStepPercent(applet.scrollStep);
+    if (!adjustStreamVolume(applet._input, norm, deltaSteps, max, stepPercent))
         return false;
 
     if (applet.showVolumeOsdOnScroll !== false)

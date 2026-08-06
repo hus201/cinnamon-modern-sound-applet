@@ -107,7 +107,8 @@ const {
     VOLUME_ADJUSTMENT_STEP,
     snapVolumeToNorm,
     adjustStreamVolume,
-    volumePercent
+    volumePercent,
+    sliderScrollStepRatio
 } = require("./../modern-sound@husain-anabtawi.com/utils/volume-math");
 const { MasterVolumeItem, MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/stream-volume-item");
 const { OutputDeviceItem, InputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/device-picker-item");
@@ -276,6 +277,20 @@ if (volumeItem) {
     imports.ui.main.soundManager.reset();
     volumeItem._onChanged(0.25);
     assertEqual(imports.ui.main.soundManager.playCount, 0, "master slider skips sound when disabled");
+}
+
+section("MasterVolumeItem slider scroll");
+if (volumeItem) {
+    const Clutter = imports.gi.Clutter;
+    const norm = 65536;
+    const stream = createMockStream({ volume: norm / 2, volume_max: norm, is_muted: false });
+    volumeItem._applet.scrollStep = 10;
+    volumeItem.connectStream(stream);
+    volumeItem._value = 0.5;
+    volumeItem._onScrollEvent(volumeItem._slider, {
+        get_scroll_direction: () => Clutter.ScrollDirection.UP
+    });
+    assertEqual(volumeItem._value, 0.6, "menu slider scroll uses configured step");
 }
 
 section("MasterVolumeItem icon mute toggle");
@@ -580,6 +595,13 @@ section("volume-math");
     assertEqual(volumePercent(norm / 2, norm, true), 0, "volumePercent is 0 when muted");
     assertEqual(volumePercent(Math.round(norm * 1.5), norm, false), 150, "volumePercent supports overamplification");
 
+    assertEqual(sliderScrollStepRatio(norm, norm, 5), 0.05, "slider scroll step at full max");
+    assertEqual(
+        sliderScrollStepRatio(norm, Math.round(norm * 1.5), 5),
+        0.05 * norm / Math.round(norm * 1.5),
+        "slider scroll step scales with overamplification max"
+    );
+
     stream.volume = norm / 2;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, 1);
@@ -587,6 +609,9 @@ section("volume-math");
 
     adjustStreamVolume(stream, norm, -1);
     assertEqual(stream.volume, norm / 2, "adjustStreamVolume decreases volume on scroll down");
+
+    adjustStreamVolume(stream, norm, 1, undefined, 10);
+    assertEqual(stream.volume, norm / 2 + norm / 10, "adjustStreamVolume uses custom scroll step");
 
     stream.volume = norm;
     stream.is_muted = false;
@@ -663,13 +688,14 @@ try {
     const instance = appletModule.main(metadata, 3, 32, 2);
     const output = instance._output;
     const norm = instance._volumeNorm;
-    const step = norm * VOLUME_ADJUSTMENT_STEP;
+    const step = norm * (instance.scrollStep / 100);
     imports.ui.main.osdWindowManager.reset();
 
     output.volume = norm / 2;
     output.is_muted = false;
     adjustMasterVolume(instance, 1);
     assertEqual(output.volume, norm / 2 + step, "scroll up increases master volume by 5%");
+
     assert(imports.ui.main.osdWindowManager.lastShow !== null, "scroll shows volume OSD");
     assertEqual(imports.ui.main.osdWindowManager.lastShow.level, 55, "OSD shows updated percent");
     assertEqual(
@@ -766,6 +792,11 @@ try {
     onIconScrollEvent(instance, null, mockScrollEvent(Clutter.ScrollDirection.UP, true));
     assertEqual(output.volume, outputVolumeBeforeShiftScroll, "shift scroll leaves output unchanged");
     assert(input.volume > norm / 4, "shift scroll adjusts input");
+
+    instance.scrollStep = 10;
+    output.volume = norm / 2;
+    adjustMasterVolume(instance, 1);
+    assertEqual(output.volume, norm / 2 + norm / 10, "scroll uses configured step");
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);
