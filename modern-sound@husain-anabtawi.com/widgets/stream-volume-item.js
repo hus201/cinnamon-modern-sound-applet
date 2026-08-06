@@ -1,6 +1,5 @@
 const PopupMenu = imports.ui.popupMenu;
 const Main = imports.ui.main;
-const Slider = imports.ui.slider;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 
@@ -10,9 +9,9 @@ const { volumeIconName, micIconName } = require("./utils/volume-icon-resolver");
 const LEVEL_SLIDER_WIDTH = 140;
 const LEVEL_SLIDER_HEIGHT = 22;
 
-class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
+class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
     constructor(applet, options = {}) {
-        super({ activate: false, hover: false });
+        super(0);
         this._applet = applet;
         this._updating = false;
         this._buildContext = options.buildContext || null;
@@ -20,8 +19,13 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
         for (const styleClass of this._actorStyleClasses())
             this.actor.add_style_class_name(styleClass);
 
-        this._buildContent();
-        this._slider.connect("value-changed", (_slider, value) => {
+        this._icon = this._createIcon();
+        this._wireIconMute(this._icon);
+        this._percentLabel = this._createPercentLabel();
+        this._configureSlider();
+        this._addVolumeActors();
+
+        this.connect("value-changed", (_item, value) => {
             if (!this._updating)
                 this._onChanged(value);
         });
@@ -34,20 +38,12 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
         return [];
     }
 
-    _buildContent() {
-        this._icon = this._createIcon();
-        this._wireIconMute(this._icon);
-        this._slider = this._createSlider();
-        this._percentLabel = this._createPercentLabel();
-        this._addVolumeActors();
-    }
-
     _createIcon() {
         return new St.Icon({
             icon_type: St.IconType.SYMBOLIC,
             icon_name: this._defaultIconName(),
             icon_size: 16,
-            style_class: this._iconStyleClass(),
+            style_class: `popup-menu-icon ${this._iconStyleClass()}`,
             reactive: true,
             track_hover: true
         });
@@ -73,19 +69,18 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
         return "modern-sound-percent-label";
     }
 
-    _addVolumeActors() {
-        this.addActor(this._icon, { span: 0 });
-        this.addActor(this._slider.actor, { span: 1, expand: true });
-        this.addActor(this._percentLabel, { span: 0 });
+    _configureSlider() {
+        this._slider.add_style_class_name(this._sliderStyleClass());
+        const [width, height] = this._sliderSize();
+        this._slider.width = width;
+        this._slider.height = height;
     }
 
-    _createSlider() {
-        const slider = new Slider.Slider(0);
-        const [width, height] = this._sliderSize();
-        slider.actor.add_style_class_name(this._sliderStyleClass());
-        slider.actor.width = width;
-        slider.actor.height = height;
-        return slider;
+    _addVolumeActors() {
+        this.removeActor(this._slider);
+        this.addActor(this._icon, { span: 0 });
+        this.addActor(this._slider, { span: 1, expand: true });
+        this.addActor(this._percentLabel, { span: 0 });
     }
 
     _createPercentLabel() {
@@ -135,7 +130,7 @@ class StreamVolumeItem extends PopupMenu.PopupBaseMenuItem {
 
     _setSliderValue(value) {
         this._updating = true;
-        this._slider.setValue(value);
+        this.setValue(value);
         this._updating = false;
     }
 

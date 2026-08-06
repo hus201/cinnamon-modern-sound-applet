@@ -672,6 +672,10 @@ try {
     assert(instance._applications !== undefined, "applet has applications section");
     assert(instance._quickActions !== undefined, "applet has quick actions");
     assert(instance._menu._items.length >= 8, "menu has volume, mic, output, input, separators, apps, and actions");
+    assert(
+        instance._menu.actor.styleClasses.includes("modern-sound-menu"),
+        "menu has modern-sound-menu class"
+    );
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);

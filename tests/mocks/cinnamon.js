@@ -149,6 +149,12 @@ class PopupSliderMenuItem extends PopupBaseMenuItem {
         this._handlers[signal] = handler;
         return 1;
     }
+
+    emit(signal, ...args) {
+        const handler = this._handlers[signal];
+        if (handler)
+            handler(this, ...args);
+    }
 }
 
 class IconApplet {
@@ -174,6 +180,11 @@ class AppletPopupMenu {
         this.actor = createActor("AppletPopupMenu");
         this.box = createActor("menu-box");
         this._items = [];
+    }
+
+    setCustomStyleClass(className) {
+        this.customStyleClass = className;
+        this.actor.styleClasses = ["menu", className];
     }
 
     addMenuItem(item) {

@@ -41,7 +41,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._menuManager = new PopupMenu.PopupMenuManager(this);
         this._menu = new Applet.AppletPopupMenu(this, orientation);
         this._menuManager.addMenu(this._menu);
-        this._menu.actor.add_style_class_name("modern-sound-menu");
+        this._menu.setCustomStyleClass("modern-sound-menu");
 
         this._settings = new Settings.AppletSettings(this, metadata.uuid, instanceId);
         this._settings.bind("keyOpen", "keyOpen", () => this._setKeybinding());
