@@ -8,7 +8,7 @@ const Cvc = imports.gi.Cvc;
 const { volumePercent } = require("./utils/volume-math");
 const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
 const { onAppletMiddleClicked } = require("./handlers/on-icon-middle-click-handler");
-const { connectOveramplificationHandler } = require("./handlers/on-overamplification-change");
+const { connectOveramplificationHandler, disconnectOveramplificationHandler } = require("./handlers/on-overamplification-change");
 const {
     createMprisController,
     toggleActivePlayer,
@@ -224,6 +224,7 @@ class ModernSoundApplet extends Applet.IconApplet {
 
     on_applet_removed_from_panel() {
         Main.keybindingManager.removeXletHotKey(this, "open-menu");
+        disconnectOveramplificationHandler(this);
         shutdownMprisController(this._mprisController);
         this._mprisController = null;
         this._control.close();

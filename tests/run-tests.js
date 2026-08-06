@@ -115,7 +115,11 @@ const { ApplicationsItem } = require("./../modern-sound@husain-anabtawi.com/widg
 const { AppStreamItem } = require("./../modern-sound@husain-anabtawi.com/widgets/app-stream-item");
 const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain-anabtawi.com/widgets/app-display");
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quick-actions-item");
-const { onOveramplificationChange } = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
+const {
+    connectOveramplificationHandler,
+    disconnectOveramplificationHandler,
+    onOveramplificationChange
+} = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
 const { adjustMasterVolume } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
 const { volumeOsdIconName, volumeOsdLevel } = require("./../modern-sound@husain-anabtawi.com/utils/volume-osd");
 const {
@@ -627,6 +631,23 @@ section("on-overamplification-change");
     assert(panelIconUpdated, "disabled change updates panel icon");
 }
 
+section("on-overamplification-change lifecycle");
+{
+    const applet = {
+        _volumeNorm: 65536,
+        _masterVolumeMax: 65536,
+        _output: null,
+        _masterVolume: { _sync() {} },
+        _updatePanelIcon() {}
+    };
+    connectOveramplificationHandler(applet);
+    assert(applet._soundSettings !== null, "connects sound settings");
+    assert(applet._soundSettingsChangedId !== undefined, "stores settings handler id");
+    disconnectOveramplificationHandler(applet);
+    assertEqual(applet._soundSettings, null, "clears sound settings on disconnect");
+    assertEqual(applet._soundSettingsChangedId, 0, "clears settings handler id");
+}
+
 section("on-icon-scroll-handler");
 try {
     const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");
@@ -825,6 +846,8 @@ try {
         instance._menu.actor.styleClasses.includes("modern-sound-menu"),
         "menu has modern-sound-menu class"
     );
+    instance.on_applet_removed_from_panel();
+    assertEqual(instance._soundSettings, null, "remove disconnects overamplification settings");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet.js smoke test threw: ${e}`);

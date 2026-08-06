@@ -603,6 +603,10 @@ function setupCinnamonMocks() {
                         this._handlers[signal] = handler;
                         return 1;
                     }
+                    disconnect(id) {
+                        if (id === 1)
+                            delete this._handlers["changed::allow-amplified-volume"];
+                    }
                     get_boolean(key) {
                         if (key === "allow-amplified-volume")
                             return this._allowAmplified;
