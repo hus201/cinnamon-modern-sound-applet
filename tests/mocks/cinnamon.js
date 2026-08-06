@@ -237,7 +237,8 @@ class AppletSettings {
     bind(key, prop, callback) {
         const defaults = {
             hideSingleOutputDevice: false,
-            hideSingleInputDevice: false
+            hideSingleInputDevice: false,
+            playVolumeChangeSound: true
         };
         if (!(key in this.target))
             this.target[prop] = key in defaults ? defaults[key] : null;
@@ -295,7 +296,13 @@ function setupCinnamonMocks() {
                     addXletHotKey() {}
                 },
                 soundManager: {
-                    play() {}
+                    playCount: 0,
+                    play() {
+                        this.playCount++;
+                    },
+                    reset() {
+                        this.playCount = 0;
+                    }
                 },
                 osdWindowManager: {
                     show() {}

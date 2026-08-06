@@ -7,7 +7,7 @@ function adjustMasterVolume(applet, deltaSteps) {
     if (!adjustStreamVolume(applet._output, applet._volumeNorm, deltaSteps, applet._masterVolumeMax))
         return false;
 
-    if (Main.soundManager)
+    if (applet.playVolumeChangeSound !== false && Main.soundManager)
         Main.soundManager.play("volume");
     if (applet._updatePanelIcon)
         applet._updatePanelIcon();

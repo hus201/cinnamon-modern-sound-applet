@@ -148,6 +148,7 @@ function createMockApplet(output, input, options = {}) {
         _masterVolumeMax: allowOveramplification ? Math.round(volumeNorm * 1.5) : volumeNorm,
         _output: output || null,
         _input: input || null,
+        playVolumeChangeSound: options.playVolumeChangeSound !== false,
         _updatePanelIcon() {},
         _syncMuteStates() {}
     };
@@ -227,9 +228,16 @@ section("MasterVolumeItem value change");
 if (volumeItem) {
     const stream = createMockStream({ volume: 0, volume_max: 65536, is_muted: true });
     volumeItem.connectStream(stream);
+    imports.ui.main.soundManager.reset();
     volumeItem._onChanged(0.5);
     assertEqual(volumeItem._percentLabel.text, "50%", "dragging to 50% updates label");
     assert(stream.is_muted === false, "dragging up unmutes");
+    assertEqual(imports.ui.main.soundManager.playCount, 1, "master slider plays volume sound by default");
+
+    volumeItem._applet.playVolumeChangeSound = false;
+    imports.ui.main.soundManager.reset();
+    volumeItem._onChanged(0.25);
+    assertEqual(imports.ui.main.soundManager.playCount, 0, "master slider skips sound when disabled");
 }
 
 section("MasterVolumeItem icon mute toggle");
@@ -287,9 +295,11 @@ section("MicVolumeItem value change");
 if (micItem) {
     const stream = createMockStream({ volume: 0, volume_max: 65536, is_muted: true });
     micItem.connectStream(stream);
+    imports.ui.main.soundManager.reset();
     micItem._onChanged(0.5);
     assertEqual(micItem._percentLabel.text, "50%", "mic dragging to 50% updates label");
     assert(stream.is_muted === false, "mic dragging up unmutes");
+    assertEqual(imports.ui.main.soundManager.playCount, 0, "mic slider never plays volume sound");
 }
 
 section("MicVolumeItem icon mute toggle");
@@ -619,6 +629,12 @@ try {
     output.is_muted = false;
     adjustMasterVolume(instance, 1);
     assert(output.volume > norm, "scroll up allows overamplification when enabled");
+
+    imports.ui.main.soundManager.reset();
+    instance.playVolumeChangeSound = false;
+    output.volume = norm / 2;
+    adjustMasterVolume(instance, 1);
+    assertEqual(imports.ui.main.soundManager.playCount, 0, "scroll skips sound when disabled");
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);

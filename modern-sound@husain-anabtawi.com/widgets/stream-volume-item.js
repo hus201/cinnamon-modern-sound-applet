@@ -172,6 +172,8 @@ class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
     }
 
     _playChangeSound() {
+        if (this._applet.playVolumeChangeSound === false)
+            return;
         if (Main.soundManager)
             Main.soundManager.play("volume");
     }

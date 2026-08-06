@@ -8,6 +8,15 @@
         "default": "<Shift><Super>s",
         "description": "Open menu"
     },
+    "section-sound": {
+        "type": "section",
+        "description": "Sound"
+    },
+    "playVolumeChangeSound": {
+        "type": "switch",
+        "default": true,
+        "description": "Play sound when changing output volume"
+    },
     "section-devices": {
         "type": "section",
         "description": "Devices"

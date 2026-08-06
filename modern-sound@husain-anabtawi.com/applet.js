@@ -45,6 +45,7 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._settings = new Settings.AppletSettings(this, metadata.uuid, instanceId);
         this._settings.bind("keyOpen", "keyOpen", () => this._setKeybinding());
+        this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
         this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
             this._syncDeviceVisibility();
         });
