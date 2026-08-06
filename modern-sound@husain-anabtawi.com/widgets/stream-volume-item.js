@@ -168,7 +168,10 @@ class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
         this._percentLabel.text = `${percent}%`;
         this._updateVolumeDisplay(value, muted, percent);
         this._afterChange();
+        this._playChangeSound();
+    }
 
+    _playChangeSound() {
         if (Main.soundManager)
             Main.soundManager.play("volume");
     }
@@ -234,6 +237,8 @@ class MicVolumeItem extends StreamVolumeItem {
         if (this._applet._syncMuteStates)
             this._applet._syncMuteStates();
     }
+
+    _playChangeSound() {}
 }
 
 module.exports = {
