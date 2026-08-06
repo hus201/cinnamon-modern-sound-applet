@@ -53,6 +53,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._settings.bind("keyOpen", "keyOpen", () => this._setKeybinding());
         this._settings.bind("middleClickAction", "middleClickAction");
         this._settings.bind("middleShiftClickAction", "middleShiftClickAction");
+        this._settings.bind("tooltipShowVolume", "tooltipShowVolume", () => this._updatePanelIcon());
         this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
         this._settings.bind("showVolumeOsdOnScroll", "showVolumeOsdOnScroll");
         this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
@@ -181,10 +182,18 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._menu.close();
     }
 
+    _setPanelTooltip(percent) {
+        if (this.tooltipShowVolume === false) {
+            this.set_applet_tooltip(_("Sound"));
+            return;
+        }
+        this.set_applet_tooltip(`${_("Volume")}: ${percent}%`);
+    }
+
     _updatePanelIcon() {
         if (!this._output) {
             this.set_applet_icon_symbolic_name("audio-volume-muted-symbolic");
-            this.set_applet_tooltip(`${_("Volume")}: 0%`);
+            this._setPanelTooltip(0);
             return;
         }
 
@@ -205,7 +214,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         }
 
         this.set_applet_icon_symbolic_name(icon);
-        this.set_applet_tooltip(`${_("Volume")}: ${percent}%`);
+        this._setPanelTooltip(percent);
     }
 
     _setKeybinding() {

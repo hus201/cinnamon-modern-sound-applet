@@ -244,6 +244,7 @@ class AppletSettings {
             hideSingleInputDevice: false,
             playVolumeChangeSound: true,
             showVolumeOsdOnScroll: true,
+            tooltipShowVolume: true,
             middleClickAction: "mute",
             middleShiftClickAction: "in_mute"
         };

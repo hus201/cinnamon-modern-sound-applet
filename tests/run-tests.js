@@ -822,6 +822,11 @@ try {
     instance._output = null;
     instance._updatePanelIcon();
     assertEqual(instance._appletTooltip, "Volume: 0%", "tooltip shows 0% without output");
+
+    instance._output = createMockStream({ volume: norm / 2, volume_max: norm, is_muted: false });
+    instance.tooltipShowVolume = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletTooltip, "Sound", "tooltip shows Sound when volume disabled");
 } catch (e) {
     failed++;
     printerr(`  ✗ applet panel tooltip threw: ${e}`);

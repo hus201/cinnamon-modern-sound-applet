@@ -30,6 +30,11 @@
         },
         "description": "Shift + middle-click action"
     },
+    "tooltipShowVolume": {
+        "type": "switch",
+        "default": true,
+        "description": "Show volume in tooltip"
+    },
     "section-sound": {
         "type": "section",
         "description": "Sound Change Effects"
