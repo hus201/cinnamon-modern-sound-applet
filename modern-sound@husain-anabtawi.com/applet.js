@@ -54,6 +54,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._settings.bind("middleClickAction", "middleClickAction");
         this._settings.bind("middleShiftClickAction", "middleShiftClickAction");
         this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
+        this._settings.bind("showVolumeOsdOnScroll", "showVolumeOsdOnScroll");
         this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
             this._syncDeviceVisibility();
         });

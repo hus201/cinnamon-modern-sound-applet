@@ -2,11 +2,14 @@ const Main = imports.ui.main;
 const Clutter = imports.gi.Clutter;
 
 const { adjustStreamVolume } = require("./utils/volume-math");
+const { showVolumeOsd } = require("./utils/volume-osd");
 
 function adjustMasterVolume(applet, deltaSteps) {
     if (!adjustStreamVolume(applet._output, applet._volumeNorm, deltaSteps, applet._masterVolumeMax))
         return false;
 
+    if (applet.showVolumeOsdOnScroll !== false)
+        showVolumeOsd(applet);
     if (applet.playVolumeChangeSound !== false && Main.soundManager)
         Main.soundManager.play("volume");
     if (applet._updatePanelIcon)

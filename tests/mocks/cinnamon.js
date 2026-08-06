@@ -243,6 +243,7 @@ class AppletSettings {
             hideSingleOutputDevice: false,
             hideSingleInputDevice: false,
             playVolumeChangeSound: true,
+            showVolumeOsdOnScroll: true,
             middleClickAction: "mute",
             middleShiftClickAction: "in_mute"
         };
@@ -311,7 +312,13 @@ function setupCinnamonMocks() {
                     }
                 },
                 osdWindowManager: {
-                    show() {}
+                    lastShow: null,
+                    show(monitorIndex, icon, label, level, convertIndex) {
+                        this.lastShow = { monitorIndex, icon, label, level, convertIndex };
+                    },
+                    reset() {
+                        this.lastShow = null;
+                    }
                 }
             }
         },
@@ -608,9 +615,9 @@ function setupCinnamonMocks() {
                             handler();
                     }
                 },
-                ThemedIcon: {
-                    new() {
-                        return {};
+                ThemedIcon: class {
+                    constructor(params) {
+                        this.name = params.name;
                     }
                 }
             }

@@ -32,12 +32,17 @@
     },
     "section-sound": {
         "type": "section",
-        "description": "Sound"
+        "description": "Sound Change Effects"
     },
     "playVolumeChangeSound": {
         "type": "switch",
         "default": true,
         "description": "Play sound when changing output volume"
+    },
+    "showVolumeOsdOnScroll": {
+        "type": "switch",
+        "default": true,
+        "description": "Show volume OSD when scrolling the panel icon"
     },
     "section-devices": {
         "type": "section",

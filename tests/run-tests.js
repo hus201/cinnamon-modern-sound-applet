@@ -117,6 +117,7 @@ const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quick-actions-item");
 const { onOveramplificationChange } = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
 const { adjustMasterVolume } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
+const { volumeOsdIconName, volumeOsdLevel } = require("./../modern-sound@husain-anabtawi.com/utils/volume-osd");
 const {
     executeMiddleClickAction,
     resolveMiddleClickAction,
@@ -154,6 +155,7 @@ function createMockApplet(output, input, options = {}) {
         _output: output || null,
         _input: input || null,
         playVolumeChangeSound: options.playVolumeChangeSound !== false,
+        showVolumeOsdOnScroll: options.showVolumeOsdOnScroll !== false,
         _updatePanelIcon() {},
         _syncMuteStates() {}
     };
@@ -197,6 +199,25 @@ assertEqual(volumeIconName(0, true), "xsi-audio-volume-muted", "muted");
 assertEqual(volumeIconName(0.1, false), "xsi-audio-volume-low", "low");
 assertEqual(volumeIconName(0.5, false), "xsi-audio-volume-medium", "medium");
 assertEqual(volumeIconName(0.9, false), "xsi-audio-volume-high", "high");
+
+section("volumeOsdIconName");
+assertEqual(volumeOsdIconName(0, 65536, true), "audio-volume-muted-symbolic", "osd muted");
+assertEqual(volumeOsdIconName(10000, 65536, false), "audio-volume-low-symbolic", "osd low");
+assertEqual(volumeOsdIconName(32768, 65536, false), "audio-volume-medium-symbolic", "osd medium");
+assertEqual(volumeOsdIconName(60000, 65536, false), "audio-volume-high-symbolic", "osd high");
+assertEqual(volumeOsdIconName(90000, 98304, false), "audio-volume-high-symbolic", "osd high at overamplified max");
+
+section("volumeOsdLevel");
+{
+    const norm = 65536;
+    const max = Math.round(norm * 1.5);
+    assertEqual(volumeOsdLevel(norm / 2, norm, false), 50, "osd level at 50%");
+    assertEqual(volumeOsdLevel(norm, norm, false), 100, "osd level at 100%");
+    assertEqual(volumeOsdLevel(norm, max, false), 67, "osd level at 100% on extended range");
+    assertEqual(volumeOsdLevel(Math.round(norm * 1.05), max, false), 70, "osd level at 105%");
+    assertEqual(volumeOsdLevel(max, max, false), 100, "osd level at 150%");
+    assertEqual(volumeOsdLevel(0, norm, true), 0, "osd level when muted");
+}
 
 section("micIconName");
 assertEqual(micIconName(0, true), "xsi-microphone-sensitivity-muted", "mic muted");
@@ -614,11 +635,20 @@ try {
     const output = instance._output;
     const norm = instance._volumeNorm;
     const step = norm * VOLUME_ADJUSTMENT_STEP;
+    imports.ui.main.osdWindowManager.reset();
 
     output.volume = norm / 2;
     output.is_muted = false;
     adjustMasterVolume(instance, 1);
     assertEqual(output.volume, norm / 2 + step, "scroll up increases master volume by 5%");
+    assert(imports.ui.main.osdWindowManager.lastShow !== null, "scroll shows volume OSD");
+    assertEqual(imports.ui.main.osdWindowManager.lastShow.level, 55, "OSD shows updated percent");
+    assertEqual(
+        imports.ui.main.osdWindowManager.lastShow.icon.name,
+        "audio-volume-medium-symbolic",
+        "OSD picks medium icon"
+    );
+    assertEqual(imports.ui.main.osdWindowManager.lastShow.monitorIndex, -1, "OSD shows on all monitors");
 
     adjustMasterVolume(instance, -1);
     assertEqual(output.volume, norm / 2, "scroll down decreases master volume by 5%");
@@ -628,6 +658,12 @@ try {
     adjustMasterVolume(instance, -1);
     assertEqual(output.volume, 0, "scroll down at low volume clamps to zero");
     assert(output.is_muted === true, "scroll down to zero mutes output");
+    assertEqual(imports.ui.main.osdWindowManager.lastShow.level, 0, "OSD shows 0% when muted");
+    assertEqual(
+        imports.ui.main.osdWindowManager.lastShow.icon.name,
+        "audio-volume-muted-symbolic",
+        "OSD picks muted icon"
+    );
 
     output.volume = norm / 2;
     output.is_muted = true;
@@ -638,14 +674,30 @@ try {
     instance._masterVolumeMax = Math.round(norm * 1.5);
     output.volume = norm;
     output.is_muted = false;
+    const levelAt100 = volumeOsdLevel(norm, instance._masterVolumeMax, false);
     adjustMasterVolume(instance, 1);
     assert(output.volume > norm, "scroll up allows overamplification when enabled");
+    assert(
+        imports.ui.main.osdWindowManager.lastShow.level > levelAt100,
+        "OSD bar updates above 100% volume"
+    );
+    assertEqual(
+        imports.ui.main.osdWindowManager.lastShow.level,
+        volumeOsdLevel(output.volume, instance._masterVolumeMax, false),
+        "OSD level tracks extended slider position"
+    );
 
     imports.ui.main.soundManager.reset();
     instance.playVolumeChangeSound = false;
     output.volume = norm / 2;
     adjustMasterVolume(instance, 1);
     assertEqual(imports.ui.main.soundManager.playCount, 0, "scroll skips sound when disabled");
+    assert(imports.ui.main.osdWindowManager.lastShow !== null, "OSD still shows when sound disabled");
+
+    imports.ui.main.osdWindowManager.reset();
+    instance.showVolumeOsdOnScroll = false;
+    adjustMasterVolume(instance, 1);
+    assertEqual(imports.ui.main.osdWindowManager.lastShow, null, "scroll skips OSD when disabled");
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);
