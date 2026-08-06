@@ -108,7 +108,8 @@ const {
     snapVolumeToNorm,
     adjustStreamVolume,
     volumePercent,
-    sliderScrollStepRatio
+    sliderScrollStepRatio,
+    invertScrollDelta
 } = require("./../modern-sound@husain-anabtawi.com/utils/volume-math");
 const { MasterVolumeItem, MicVolumeItem } = require("./../modern-sound@husain-anabtawi.com/widgets/stream-volume-item");
 const { OutputDeviceItem, InputDeviceItem } = require("./../modern-sound@husain-anabtawi.com/widgets/device-picker-item");
@@ -291,6 +292,13 @@ if (volumeItem) {
         get_scroll_direction: () => Clutter.ScrollDirection.UP
     });
     assertEqual(volumeItem._value, 0.6, "menu slider scroll uses configured step");
+
+    volumeItem._value = 0.5;
+    volumeItem._applet.invertScrollDirection = true;
+    volumeItem._onScrollEvent(volumeItem._slider, {
+        get_scroll_direction: () => Clutter.ScrollDirection.UP
+    });
+    assertEqual(volumeItem._value, 0.4, "menu slider scroll respects invert direction");
 }
 
 section("MasterVolumeItem icon mute toggle");
@@ -602,6 +610,9 @@ section("volume-math");
         "slider scroll step scales with overamplification max"
     );
 
+    assertEqual(invertScrollDelta(-1, true), 1, "invertScrollDelta flips sign");
+    assertEqual(invertScrollDelta(1, false), 1, "invertScrollDelta leaves delta when disabled");
+
     stream.volume = norm / 2;
     stream.is_muted = false;
     adjustStreamVolume(stream, norm, 1);
@@ -797,6 +808,11 @@ try {
     output.volume = norm / 2;
     adjustMasterVolume(instance, 1);
     assertEqual(output.volume, norm / 2 + norm / 10, "scroll uses configured step");
+
+    output.volume = norm / 2;
+    instance.invertScrollDirection = true;
+    onIconScrollEvent(instance, null, mockScrollEvent(Clutter.ScrollDirection.UP, false));
+    assert(output.volume < norm / 2, "inverted scroll up decreases output volume");
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);

@@ -64,6 +64,10 @@ function sliderScrollStepRatio(norm, max, scrollStep) {
     return scrollStepFraction(scrollStep) * targetNorm / targetMax;
 }
 
+function invertScrollDelta(deltaSteps, invert) {
+    return invert ? -deltaSteps : deltaSteps;
+}
+
 module.exports = {
     VOLUME_ADJUSTMENT_STEP,
     MUTE_THRESHOLD,
@@ -72,5 +76,6 @@ module.exports = {
     adjustStreamVolume,
     scrollStepPercent,
     scrollStepFraction,
-    sliderScrollStepRatio
+    sliderScrollStepRatio,
+    invertScrollDelta
 };

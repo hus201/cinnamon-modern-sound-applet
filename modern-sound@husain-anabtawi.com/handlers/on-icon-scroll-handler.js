@@ -4,7 +4,16 @@ const Clutter = imports.gi.Clutter;
 const { adjustStreamVolume } = require("./utils/volume-math");
 const { showVolumeOsd, showMicOsd } = require("./utils/volume-osd");
 const { isShiftPressed } = require("./handlers/on-icon-middle-click-handler");
-const { scrollStepPercent } = require("./utils/volume-math");
+const { scrollStepPercent, invertScrollDelta } = require("./utils/volume-math");
+
+function _scrollDelta(applet, direction) {
+    let delta = 0;
+    if (direction === Clutter.ScrollDirection.UP)
+        delta = 1;
+    else if (direction === Clutter.ScrollDirection.DOWN)
+        delta = -1;
+    return invertScrollDelta(delta, applet.invertScrollDirection === true);
+}
 
 function adjustMasterVolume(applet, deltaSteps) {
     const stepPercent = scrollStepPercent(applet.scrollStep);
@@ -49,11 +58,9 @@ function onIconScrollEvent(applet, _actor, event) {
         return Clutter.EVENT_PROPAGATE;
 
     const adjustVolume = isShiftPressed(event) ? adjustMicVolume : adjustMasterVolume;
-
-    if (direction === Clutter.ScrollDirection.UP)
-        adjustVolume(applet, 1);
-    else if (direction === Clutter.ScrollDirection.DOWN)
-        adjustVolume(applet, -1);
+    const delta = _scrollDelta(applet, direction);
+    if (delta)
+        adjustVolume(applet, delta);
 
     return Clutter.EVENT_STOP;
 }
@@ -66,5 +73,6 @@ module.exports = {
     adjustMasterVolume,
     adjustMicVolume,
     onIconScrollEvent,
-    connectIconScrollHandler
+    connectIconScrollHandler,
+    _scrollDelta
 };

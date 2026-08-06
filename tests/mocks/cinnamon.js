@@ -246,6 +246,7 @@ class AppletSettings {
             showVolumeOsdOnScroll: true,
             tooltipShowVolume: true,
             scrollStep: 5,
+            invertScrollDirection: false,
             middleClickAction: "mute",
             middleShiftClickAction: "in_mute"
         };

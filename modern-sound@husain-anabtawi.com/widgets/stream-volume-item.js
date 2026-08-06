@@ -3,7 +3,7 @@ const Main = imports.ui.main;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 
-const { MUTE_THRESHOLD, snapVolumeToNorm, volumePercent, sliderScrollStepRatio, scrollStepFraction } = require("./utils/volume-math");
+const { MUTE_THRESHOLD, snapVolumeToNorm, volumePercent, sliderScrollStepRatio, scrollStepFraction, invertScrollDelta } = require("./utils/volume-math");
 const { volumeIconName, micIconName } = require("./utils/volume-icon-resolver");
 
 const LEVEL_SLIDER_WIDTH = 140;
@@ -139,10 +139,16 @@ class StreamVolumeItem extends PopupMenu.PopupSliderMenuItem {
             return;
 
         const step = this._sliderScrollStepRatio();
-        if (direction === Clutter.ScrollDirection.DOWN)
-            this._value = Math.max(0, this._value - step);
-        else if (direction === Clutter.ScrollDirection.UP)
+        let delta = 0;
+        if (direction === Clutter.ScrollDirection.UP)
+            delta = 1;
+        else if (direction === Clutter.ScrollDirection.DOWN)
+            delta = -1;
+        delta = invertScrollDelta(delta, this._applet.invertScrollDirection === true);
+        if (delta > 0)
             this._value = Math.min(1, this._value + step);
+        else if (delta < 0)
+            this._value = Math.max(0, this._value - step);
 
         this._slider.queue_repaint();
         this.emit("value-changed", this._value);
