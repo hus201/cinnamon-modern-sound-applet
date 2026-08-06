@@ -120,8 +120,12 @@ const {
     disconnectOveramplificationHandler,
     onOveramplificationChange
 } = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
-const { adjustMasterVolume } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
-const { volumeOsdIconName, volumeOsdLevel } = require("./../modern-sound@husain-anabtawi.com/utils/volume-osd");
+const {
+    adjustMasterVolume,
+    adjustMicVolume,
+    onIconScrollEvent
+} = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
+const { volumeOsdIconName, volumeOsdLevel, micOsdIconName } = require("./../modern-sound@husain-anabtawi.com/utils/volume-osd");
 const {
     executeMiddleClickAction,
     resolveMiddleClickAction,
@@ -222,6 +226,10 @@ section("volumeOsdLevel");
     assertEqual(volumeOsdLevel(max, max, false), 100, "osd level at 150%");
     assertEqual(volumeOsdLevel(0, norm, true), 0, "osd level when muted");
 }
+
+section("micOsdIconName");
+assertEqual(micOsdIconName(0, 65536, true), "microphone-sensitivity-muted-symbolic", "mic osd muted");
+assertEqual(micOsdIconName(32768, 65536, false), "microphone-sensitivity-medium-symbolic", "mic osd medium");
 
 section("micIconName");
 assertEqual(micIconName(0, true), "xsi-microphone-sensitivity-muted", "mic muted");
@@ -719,6 +727,45 @@ try {
     instance.showVolumeOsdOnScroll = false;
     adjustMasterVolume(instance, 1);
     assertEqual(imports.ui.main.osdWindowManager.lastShow, null, "scroll skips OSD when disabled");
+
+    const input = instance._input;
+    const outputBeforeMicScroll = output.volume;
+    imports.ui.main.osdWindowManager.reset();
+    imports.ui.main.soundManager.reset();
+    instance.showVolumeOsdOnScroll = true;
+    input.volume = norm / 2;
+    input.is_muted = false;
+    adjustMicVolume(instance, 1);
+    assertEqual(input.volume, norm / 2 + step, "mic scroll up increases input volume by 5%");
+    assertEqual(output.volume, outputBeforeMicScroll, "mic scroll does not change output volume");
+    assertEqual(imports.ui.main.soundManager.playCount, 0, "mic scroll never plays volume sound");
+    assertEqual(
+        imports.ui.main.osdWindowManager.lastShow.icon.name,
+        "microphone-sensitivity-medium-symbolic",
+        "mic scroll shows mic OSD icon"
+    );
+
+    const Clutter = imports.gi.Clutter;
+    function mockScrollEvent(direction, shift) {
+        return {
+            _shift: shift,
+            get_scroll_direction() {
+                return direction;
+            }
+        };
+    }
+
+    output.volume = norm / 2;
+    input.volume = norm / 4;
+    input.is_muted = false;
+    onIconScrollEvent(instance, null, mockScrollEvent(Clutter.ScrollDirection.UP, false));
+    assert(output.volume > norm / 2, "plain scroll adjusts output");
+    assertEqual(input.volume, norm / 4, "plain scroll leaves input unchanged");
+
+    const outputVolumeBeforeShiftScroll = output.volume;
+    onIconScrollEvent(instance, null, mockScrollEvent(Clutter.ScrollDirection.UP, true));
+    assertEqual(output.volume, outputVolumeBeforeShiftScroll, "shift scroll leaves output unchanged");
+    assert(input.volume > norm / 4, "shift scroll adjusts input");
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);
