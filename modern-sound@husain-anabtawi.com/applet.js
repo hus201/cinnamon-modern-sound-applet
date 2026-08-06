@@ -7,7 +7,13 @@ const Cvc = imports.gi.Cvc;
 
 const { volumePercent } = require("./utils/volume-math");
 const { connectIconScrollHandler } = require("./handlers/on-icon-scroll-handler");
+const { onAppletMiddleClicked } = require("./handlers/on-icon-middle-click-handler");
 const { connectOveramplificationHandler } = require("./handlers/on-overamplification-change");
+const {
+    createMprisController,
+    toggleActivePlayer,
+    shutdownMprisController
+} = require("./utils/mpris-playback");
 const { MasterVolumeItem, MicVolumeItem } = require("./widgets/stream-volume-item");
 const { InputDeviceItem, OutputDeviceItem } = require("./widgets/device-picker-item");
 const { ApplicationsItem } = require("./widgets/applications-item");
@@ -45,6 +51,8 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this._settings = new Settings.AppletSettings(this, metadata.uuid, instanceId);
         this._settings.bind("keyOpen", "keyOpen", () => this._setKeybinding());
+        this._settings.bind("middleClickAction", "middleClickAction");
+        this._settings.bind("middleShiftClickAction", "middleShiftClickAction");
         this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
         this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
             this._syncDeviceVisibility();
@@ -161,6 +169,12 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._input.change_is_muted(!this._input.is_muted);
     }
 
+    toggleActivePlayer() {
+        if (!this._mprisController)
+            this._mprisController = createMprisController();
+        toggleActivePlayer(this._mprisController);
+    }
+
     openSettings() {
         Util.spawn(["cinnamon-settings", "sound"]);
         this._menu.close();
@@ -203,8 +217,14 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._menu.toggle();
     }
 
+    on_applet_middle_clicked(event) {
+        onAppletMiddleClicked(this, event);
+    }
+
     on_applet_removed_from_panel() {
         Main.keybindingManager.removeXletHotKey(this, "open-menu");
+        shutdownMprisController(this._mprisController);
+        this._mprisController = null;
         this._control.close();
     }
 }

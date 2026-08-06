@@ -238,7 +238,9 @@ class AppletSettings {
         const defaults = {
             hideSingleOutputDevice: false,
             hideSingleInputDevice: false,
-            playVolumeChangeSound: true
+            playVolumeChangeSound: true,
+            middleClickAction: "mute",
+            middleShiftClickAction: "in_mute"
         };
         if (!(key in this.target))
             this.target[prop] = key in defaults ? defaults[key] : null;
@@ -427,6 +429,9 @@ function setupCinnamonMocks() {
                     END: 2,
                     FILL: 3
                 },
+                ModifierType: {
+                    SHIFT_MASK: 1
+                },
                 ScrollDirection: {
                     UP: 0,
                     DOWN: 1,
@@ -434,6 +439,13 @@ function setupCinnamonMocks() {
                 },
                 EVENT_STOP: 1,
                 EVENT_PROPAGATE: 0
+            },
+            Cinnamon: {
+                get_event_state(event) {
+                    return event && event._shift ?
+                        imports.gi.Clutter.ModifierType.SHIFT_MASK :
+                        0;
+                }
             },
             Pango: {
                 EllipsizeMode: {

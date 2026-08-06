@@ -117,6 +117,11 @@ const { appStreamLabel, applyAppStreamIcon } = require("./../modern-sound@husain
 const { QuickActionsItem } = require("./../modern-sound@husain-anabtawi.com/widgets/quick-actions-item");
 const { onOveramplificationChange } = require("./../modern-sound@husain-anabtawi.com/handlers/on-overamplification-change");
 const { adjustMasterVolume } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
+const {
+    executeMiddleClickAction,
+    resolveMiddleClickAction,
+    onAppletMiddleClicked
+} = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-middle-click-handler");
 
 let passed = 0;
 let failed = 0;
@@ -638,6 +643,76 @@ try {
 } catch (e) {
     failed++;
     printerr(`  ✗ on-icon-scroll-handler threw: ${e}`);
+}
+
+section("on-icon-middle-click-handler");
+try {
+    const output = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+    const input = createMockStream({ volume: 32768, volume_max: 65536, is_muted: false });
+    let outputToggles = 0;
+    let inputToggles = 0;
+    let playerToggles = 0;
+    const applet = {
+        _output: output,
+        _input: input,
+        middleClickAction: "mute",
+        middleShiftClickAction: "in_mute",
+        toggleSoundMute() {
+            outputToggles++;
+            output.change_is_muted(!output.is_muted);
+        },
+        toggleInputMute() {
+            inputToggles++;
+            input.change_is_muted(!input.is_muted);
+        },
+        toggleActivePlayer() {
+            playerToggles++;
+        }
+    };
+
+    executeMiddleClickAction(applet, "out_mute");
+    assertEqual(outputToggles, 1, "out_mute toggles output once");
+    assertEqual(inputToggles, 0, "out_mute does not toggle input");
+
+    executeMiddleClickAction(applet, "in_mute");
+    assertEqual(inputToggles, 1, "in_mute toggles input once");
+
+    output.is_muted = false;
+    input.is_muted = false;
+    outputToggles = 0;
+    inputToggles = 0;
+    executeMiddleClickAction(applet, "mute");
+    assertEqual(inputToggles, 1, "mute toggles input when both unmuted");
+    assertEqual(outputToggles, 1, "mute toggles output when both unmuted");
+
+    output.is_muted = true;
+    input.is_muted = false;
+    outputToggles = 0;
+    inputToggles = 0;
+    executeMiddleClickAction(applet, "mute");
+    assertEqual(inputToggles, 0, "mute skips input when states differ");
+    assertEqual(outputToggles, 1, "mute still toggles output when states differ");
+
+    executeMiddleClickAction(applet, "player");
+    assertEqual(playerToggles, 1, "player action toggles active player");
+
+    applet.middleClickAction = "out_mute";
+    applet.middleShiftClickAction = "in_mute";
+    assertEqual(resolveMiddleClickAction(applet, false), "out_mute", "plain middle click uses middleClickAction");
+    assertEqual(resolveMiddleClickAction(applet, true), "in_mute", "shift middle click uses middleShiftClickAction");
+
+    outputToggles = 0;
+    onAppletMiddleClicked(applet, { _shift: false });
+    assertEqual(outputToggles, 1, "middle click event runs configured action");
+
+    inputToggles = 0;
+    onAppletMiddleClicked(applet, { _shift: true });
+    assertEqual(inputToggles, 1, "shift middle click event runs shift action");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ on-icon-middle-click-handler threw: ${e}`);
+    if (e.stack)
+        printerr(e.stack);
 }
 
 section("applet panel tooltip");

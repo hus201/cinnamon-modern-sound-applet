@@ -8,6 +8,28 @@
         "default": "<Shift><Super>s",
         "description": "Open menu"
     },
+    "middleClickAction": {
+        "type": "combobox",
+        "default": "mute",
+        "options": {
+            "Toggle Mute": "mute",
+            "Toggle Mute output": "out_mute",
+            "Toggle Mute input": "in_mute",
+            "Toggle Play / Pause": "player"
+        },
+        "description": "Middle-click action"
+    },
+    "middleShiftClickAction": {
+        "type": "combobox",
+        "default": "in_mute",
+        "options": {
+            "Toggle Mute": "mute",
+            "Toggle Mute output": "out_mute",
+            "Toggle Mute input": "in_mute",
+            "Toggle Play / Pause": "player"
+        },
+        "description": "Shift + middle-click action"
+    },
     "section-sound": {
         "type": "section",
         "description": "Sound"
