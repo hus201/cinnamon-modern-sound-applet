@@ -269,6 +269,12 @@ section("MasterVolumeItem overamplification");
     item._onChanged(2 / 3);
     assertEqual(stream.volume, norm, "slider at 100% mark sets norm volume");
     assertEqual(item._percentLabel.text, "100%", "100% mark shows 100% label");
+    assertEqual(item._markPosition, 1 / 1.5, "shows 100% mark when overamplification enabled");
+
+    const appletNoOveramp = createMockApplet(null, null, { allowOveramplification: false });
+    const itemNoOveramp = new MasterVolumeItem(appletNoOveramp);
+    itemNoOveramp.connectStream(createMockStream({ volume: norm, volume_max: norm, is_muted: false }));
+    assertEqual(itemNoOveramp._markPosition, 0, "hides 100% mark when overamplification disabled");
 }
 
 section("MicVolumeItem construction");

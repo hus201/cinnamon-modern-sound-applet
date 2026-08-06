@@ -145,6 +145,10 @@ class PopupSliderMenuItem extends PopupBaseMenuItem {
         this._value = value;
     }
 
+    set_mark(value) {
+        this._markPosition = value;
+    }
+
     connect(signal, handler) {
         this._handlers[signal] = handler;
         return 1;

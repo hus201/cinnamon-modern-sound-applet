@@ -207,6 +207,7 @@ class MasterVolumeItem extends StreamVolumeItem {
     }
 
     _afterSync() {
+        this._syncVolumeMark();
         if (this._applet._updatePanelIcon)
             this._applet._updatePanelIcon();
     }
@@ -214,6 +215,13 @@ class MasterVolumeItem extends StreamVolumeItem {
     _afterChange() {
         if (this._applet._updatePanelIcon)
             this._applet._updatePanelIcon();
+    }
+
+    _syncVolumeMark() {
+        const norm = this._volumeNorm() || 1;
+        const max = this._streamVolumeMax(norm);
+        const mark = this._applet._allowOveramplification && max > norm ? norm / max : 0;
+        this.set_mark(mark);
     }
 }
 
