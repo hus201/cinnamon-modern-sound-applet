@@ -26,7 +26,7 @@ function addSectionSeparator(menu) {
     return separator;
 }
 
-class ModernSoundApplet extends Applet.IconApplet {
+class ModernSoundApplet extends Applet.TextIconApplet {
     constructor(metadata, orientation, panelHeight, instanceId) {
         super(orientation, panelHeight, instanceId);
 
@@ -54,6 +54,7 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._settings.bind("middleClickAction", "middleClickAction");
         this._settings.bind("middleShiftClickAction", "middleShiftClickAction");
         this._settings.bind("tooltipShowVolume", "tooltipShowVolume", () => this._updatePanelIcon());
+        this._settings.bind("showVolumePercentage", "showVolumePercentage", () => this._updatePanelIcon());
         this._settings.bind("scrollStep", "scrollStep");
         this._settings.bind("invertScrollDirection", "invertScrollDirection");
         this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
@@ -223,10 +224,19 @@ class ModernSoundApplet extends Applet.IconApplet {
         this.set_applet_tooltip(`${_("Volume")}: ${percent}%`);
     }
 
+    _setPanelPercentage(percent) {
+        if (this.showVolumePercentage !== true) {
+            this.set_applet_label("");
+            return;
+        }
+        this.set_applet_label(`${percent}%`);
+    }
+
     _updatePanelIcon() {
         if (!this._output) {
             this.set_applet_icon_symbolic_name("audio-volume-muted-symbolic");
             this._setPanelTooltip(0);
+            this._setPanelPercentage(0);
             return;
         }
 
@@ -248,6 +258,7 @@ class ModernSoundApplet extends Applet.IconApplet {
 
         this.set_applet_icon_symbolic_name(icon);
         this._setPanelTooltip(percent);
+        this._setPanelPercentage(percent);
     }
 
     _setKeybinding() {

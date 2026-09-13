@@ -926,6 +926,43 @@ try {
     printerr(`  ✗ applet panel tooltip threw: ${e}`);
 }
 
+section("applet panel volume percentage");
+try {
+    const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");
+    const metadata = { uuid: "modern-sound@husain-anabtawi.com" };
+    const instance = appletModule.main(metadata, 3, 32, 4);
+    const norm = instance._volumeNorm;
+
+    assertEqual(instance._appletLabel, "", "percentage label hidden by default");
+    assertEqual(instance._appletLabelHidden, true, "percentage label actor hidden by default");
+
+    instance.showVolumePercentage = true;
+    instance._output.volume = Math.round(norm * 0.45);
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletLabel, "45%", "shows volume percentage next to icon");
+    assertEqual(instance._appletLabelHidden, false, "percentage label visible when enabled");
+
+    instance._output.is_muted = true;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletLabel, "0%", "shows 0% when muted");
+
+    instance._allowOveramplification = true;
+    instance._masterVolumeMax = Math.round(norm * 1.5);
+    instance._output.volume = instance._masterVolumeMax;
+    instance._output.is_muted = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletLabel, "150%", "shows overamplified percentage");
+
+    instance.showVolumePercentage = false;
+    instance._updatePanelIcon();
+    assertEqual(instance._appletLabel, "", "hides percentage when setting disabled");
+    assertEqual(instance._appletLabelHidden, true, "percentage label actor hidden when disabled");
+} catch (e) {
+    failed++;
+    printerr(`  ✗ applet panel volume percentage threw: ${e}`);
+}
+
 section("applet.js smoke test");
 try {
     const appletModule = require("./../modern-sound@husain-anabtawi.com/applet");

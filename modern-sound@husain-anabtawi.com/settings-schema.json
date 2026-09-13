@@ -35,6 +35,11 @@
         "default": true,
         "description": "Show volume in tooltip"
     },
+    "showVolumePercentage": {
+        "type": "switch",
+        "default": false,
+        "description": "Show volume percentage next to icon"
+    },
     "scrollStep": {
         "type": "spinbutton",
         "default": 5,
