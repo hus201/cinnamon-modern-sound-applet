@@ -17,10 +17,10 @@ After updating, reload Cinnamon: **Alt+F2** → type `r` → Enter
 
 - **Master volume** — slider with percentage (100% mark when overamplification is on)
 - **Mic volume** — slider with percentage
-- **Output device** — current speaker/headphone; click the row to expand when multiple devices are available
+- **Output device** — current speaker/headphone; click the row to expand when multiple devices are available (selected device uses a thin theme-colored outline)
 - **Input device** — current microphone; click the row to expand when multiple devices are available
-- **Applications** — per-app volume for apps that are playing audio
-- **Quick actions** — Mute Sound · Mute Mic · Open Settings
+- **Applications** — per-app volume for apps that are playing audio (optional)
+- **Quick actions** — Mute Sound · Mute Mic · Open Settings (optional)
 
 ### Scroll wheel — panel icon
 
@@ -52,6 +52,7 @@ Right-click the applet → **Configure…**
 | **Middle-click action** | Action on middle-click (default: toggle mute) |
 | **Shift + middle-click action** | Action on Shift+middle-click (default: toggle mic mute) |
 | **Show volume in tooltip** | When off, tooltip shows **Sound** instead of `Volume: N%` |
+| **Show volume percentage next to icon** | Shows `N%` beside the panel icon (off by default) |
 | **Volume scroll step** | Scroll adjustment step in percent (1–10%, default 5%) |
 | **Invert scroll direction** | Reverse scroll up/down for panel and menu sliders |
 
@@ -61,6 +62,14 @@ Right-click the applet → **Configure…**
 |---------|-------------|
 | **Play sound when changing output volume** | Volume click sound for output sliders and panel scroll (mic always silent) |
 | **Show volume OSD when scrolling the panel icon** | Brief on-screen volume indicator when scrolling the panel icon |
+
+### Menu
+
+| Setting | Description |
+|---------|-------------|
+| **Show quick action toggles** | Mute Sound / Mute Mic / Open Settings row |
+| **Show application volumes** | Per-app volume section while apps are playing |
+| **Show input device** | Microphone device picker row |
 
 ### Devices
 

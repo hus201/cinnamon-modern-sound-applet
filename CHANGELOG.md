@@ -2,7 +2,7 @@
 
 All notable changes to **Modern Sound** are documented in this file.
 
-## [1.3.0] — 2026-08-06
+## [1.3.0] — 2026-09-13
 
 ### Added
 
@@ -11,21 +11,26 @@ All notable changes to **Modern Sound** are documented in this file.
 - **Sound Change Effects** — toggle volume change sound on output adjustments; mic volume changes stay silent.
 - **Optional volume OSD** on panel icon scroll (uses Cinnamon media-keys OSD; correct bar mapping above 100%).
 - **Tooltip setting** — show volume percentage or **Sound** label on panel hover.
+- **Panel volume percentage** — optional `N%` label next to the panel icon.
 - **Shift + scroll** on panel icon to adjust mic volume; plain scroll adjusts output.
 - **Configurable volume scroll step** (1–10%) for panel and menu sliders.
 - **Invert scroll direction** for panel and menu sliders.
+- **Menu section toggles** — show/hide quick actions, application volumes, and the input device row.
 
 ### Changed
 
 - Menu styling follows the **active Cinnamon shell theme** (standard popup menu classes; layout-only custom CSS).
 - Master, mic, and app sliders use **`PopupSliderMenuItem`** like the official sound applet.
 - Scroll step math matches Cinnamon's norm-based stepping (including overamplification).
-- Test suite expanded (200+ offline tests under GJS).
+- **Device list selection** — selected input/output rows use a thin theme-colored outline (`sliderActiveColor`) instead of radio/check icons; hover uses the theme highlight.
+- Test suite expanded (250+ offline tests under GJS).
 
 ### Fixed
 
 - GSettings overamplification listener cleaned up on applet removal.
 - Panel scroll OSD updates above 100% volume when overamplification is on.
+- Device selection matched **UI device ids** from `active-output-update` / `active-input-update` (not Pulse stream indexes), so the correct device stays highlighted.
+- Master/mic slider width no longer shrinks when opening or closing device lists.
 
 ---
 

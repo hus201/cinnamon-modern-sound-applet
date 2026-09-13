@@ -21,9 +21,9 @@ A modern Cinnamon panel sound applet — compact by default, expandable when nee
 
 **Expanded (device lists)**
 
-- Radio list of output devices with icons and subtitles
+- List of output devices with icons and subtitles; the active device uses a thin theme-colored outline
   - Built-in speakers, HDMI, USB DAC, Bluetooth (with battery %)
-- Radio list of input devices with icons and subtitles
+- List of input devices with icons and subtitles
   - Built-in microphone, USB mic, headset, Bluetooth
 - **Quick actions** row: Mute Sound · Mute Mic · Open Settings (opens Sound Settings)
 
@@ -66,6 +66,7 @@ modern-sound@husain-anabtawi.com/
 │   ├── volume-icon-resolver.js
 │   ├── volume-math.js
 │   ├── volume-osd.js
+│   ├── slider-active-color.js
 │   └── mpris-playback.js
 ├── widgets/               # Custom menu widgets
 │   ├── stream-volume-item.js
