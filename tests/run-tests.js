@@ -129,6 +129,12 @@ const {
 } = require("./../modern-sound@husain-anabtawi.com/handlers/on-icon-scroll-handler");
 const { volumeOsdIconName, volumeOsdLevel, micOsdIconName } = require("./../modern-sound@husain-anabtawi.com/utils/volume-osd");
 const {
+    clutterColorToCssRgba,
+    readSliderActiveColor,
+    getSliderActiveColor,
+    getSliderActiveColorProbe
+} = require("./../modern-sound@husain-anabtawi.com/utils/slider-active-color");
+const {
     executeMiddleClickAction,
     resolveMiddleClickAction,
     onAppletMiddleClicked
@@ -164,6 +170,9 @@ function createMockApplet(output, input, options = {}) {
         _masterVolumeMax: allowOveramplification ? Math.round(volumeNorm * 1.5) : volumeNorm,
         _output: output || null,
         _input: input || null,
+        _masterVolume: {
+            _sync() {}
+        },
         playVolumeChangeSound: options.playVolumeChangeSound !== false,
         showVolumeOsdOnScroll: options.showVolumeOsdOnScroll !== false,
         _updatePanelIcon() {},
@@ -173,6 +182,53 @@ function createMockApplet(output, input, options = {}) {
 
 function createMockControl() {
     return new imports.gi.Cvc.MixerControl({ name: "test" });
+}
+
+section("slider-active-color");
+assertEqual(
+    clutterColorToCssRgba({ red: 12, green: 117, blue: 222, alpha: 255 }),
+    "rgba(12, 117, 222, 1)",
+    "converts clutter color to css rgba"
+);
+assertEqual(
+    clutterColorToCssRgba({ red: 12, green: 117, blue: 222, alpha: 255 }, 0.55),
+    "rgba(12, 117, 222, 0.55)",
+    "scales clutter color alpha for muted outline"
+);
+assertEqual(
+    getSliderActiveColor(),
+    "rgba(12, 117, 222, 1)",
+    "reads sliderActiveColor from hidden probe theme node"
+);
+assertEqual(
+    getSliderActiveColor(0.55),
+    "rgba(12, 117, 222, 0.55)",
+    "reads muted sliderActiveColor for selection outline"
+);
+assertEqual(
+    readSliderActiveColor(null),
+    null,
+    "returns null when theme node actor is missing"
+);
+{
+    const builtIn = createMockOutput(0, "Built-in Audio", "Analog Stereo");
+    const applet = createMockApplet(builtIn);
+    const item = new OutputDeviceItem(applet);
+    const control = createMockControl();
+    item.bindControl(control);
+    control.addOutput(0, builtIn);
+    item._syncActiveDevice();
+    const row = item._devices[0].row;
+    const probe = getSliderActiveColorProbe();
+    assert(String(row.style || "").indexOf("12, 117, 222") !== -1, "initial outline uses current sliderActiveColor");
+    assert(String(row.style || "").indexOf("0.55") !== -1, "initial outline uses muted alpha");
+    assert(String(row.style || "").indexOf("1px") !== -1, "initial outline is 1px");
+
+    probe.setSliderActiveColor({ red: 255, green: 113, blue: 57, alpha: 255 });
+    assert(String(row.style || "").indexOf("255, 113, 57") !== -1, "outline updates when sliderActiveColor changes");
+    assert(String(row.style || "").indexOf("12, 117, 222") === -1, "old sliderActiveColor is not kept");
+    assert(String(row.style || "").indexOf("0.55") !== -1, "updated outline keeps muted alpha");
+    probe.setSliderActiveColor({ red: 12, green: 117, blue: 222, alpha: 255 });
 }
 
 section("deviceDisplayIcon");
@@ -411,19 +467,80 @@ if (outputItem) {
     outputItem._syncActiveDevice();
     const activeRow = outputItem._devices.find((entry) => entry.id === 0);
     assert(activeRow !== undefined, "finds active device row");
-    assertEqual(activeRow.row._radio.icon_name, "radio-checked-symbolic", "marks active row");
+    assert(activeRow.row.has_style_class_name("selected") === true, "active row has selection style");
+    assert(activeRow.row.has_style_pseudo_class("active") !== true, "selected row is outline-only without hover");
+    assert(String(activeRow.row.style || "").indexOf("12, 117, 222") !== -1, "selected outline uses sliderActiveColor");
+    assert(String(activeRow.row.style || "").indexOf("inset 0 0 0 1px") !== -1, "selected outline is thin 1px ring");
+    assert(String(activeRow.row.style || "").indexOf("0.55") !== -1, "selected outline is muted");
+    assert(String(activeRow.row.style || "").indexOf("padding: 8px 10px") !== -1, "selected outline keeps main row padding");
+    assert(activeRow.row._radio === undefined, "device rows have no radio icon");
 
     const hdmiRow = outputItem._devices.find((entry) => entry.id === 1);
-    assertEqual(hdmiRow.row._radio.icon_name, "radio-off-symbolic", "inactive row is off");
+    assert(hdmiRow.row.has_style_class_name("selected") !== true, "inactive row has no selection style");
+    assert(hdmiRow.row.has_style_pseudo_class("active") !== true, "inactive row is not highlighted");
 
     hdmiRow.row.emit("button-press-event", { get_button: () => 1 });
     assert(control._activeOutput === hdmi, "row click switches output");
     assertEqual(control._activeOutput.description, "HDMI / DisplayPort", "active output updated");
+    assertEqual(outputItem._activeUiDeviceId, 1, "tracks UI device id from active-output-update");
+    assertEqual(outputItem._nameLabel.text, "HDMI / DisplayPort", "header shows selected UI device");
+    assert(hdmiRow.row.has_style_class_name("selected") === true, "selected row outlined after switch");
+    assert(hdmiRow.row.has_style_pseudo_class("active") !== true, "selected row has outline not highlight");
+    assert(activeRow.row.has_style_class_name("selected") !== true, "previous row loses selection style");
+    assert(activeRow.row.has_style_pseudo_class("active") !== true, "previous row clears highlight");
 
     outputItem._header.emit("button-release-event", { get_button: () => 1 });
     assert(outputItem._listBox.visible === true, "header expands device list");
+    assert(outputItem._header.has_style_pseudo_class("active") !== true, "expanded header has no pinned highlight");
     outputItem._header.emit("button-release-event", { get_button: () => 1 });
     assert(outputItem._listBox.visible === false, "header collapses device list");
+    assert(outputItem._header.has_style_pseudo_class("active") !== true, "collapsed header stays without highlight");
+
+    activeRow.row.hover = true;
+    activeRow.row.emit("notify::hover");
+    assert(activeRow.row.has_style_pseudo_class("active") === true, "hovered inactive row uses theme highlight");
+    assert(activeRow.row.has_style_class_name("selected") !== true, "hover does not mark row selected");
+    activeRow.row.hover = false;
+    activeRow.row.emit("notify::hover");
+    assert(activeRow.row.has_style_pseudo_class("active") !== true, "hover leave clears theme highlight");
+
+    hdmiRow.row.hover = true;
+    hdmiRow.row.emit("notify::hover");
+    assert(hdmiRow.row.has_style_class_name("selected") === true, "selected row keeps outline while hovered");
+    assert(hdmiRow.row.has_style_pseudo_class("active") === true, "selected row gets highlight only while hovered");
+    hdmiRow.row.hover = false;
+    hdmiRow.row.emit("notify::hover");
+    assert(hdmiRow.row.has_style_pseudo_class("active") !== true, "selected row drops highlight when hover ends");
+}
+
+section("OutputDeviceItem UI device id vs stream index");
+{
+    /* Speakers UI id 5, but Pulse sink index 2 — old matching used stream.index and failed. */
+    const speakers = createMockOutput(5, "Speakers", "USB Audio Device", null, 2);
+    const hdmi = createMockOutput(7, "HDMI / DisplayPort", "GPU", null, 8);
+    const sink = createMockStream({
+        description: "USB Audio Device Analog Stereo",
+        index: 2
+    });
+    const control = createMockControl();
+    control.lookup_device_from_stream = (stream) => {
+        if (stream === sink || (stream && stream.index === 2))
+            return speakers;
+        return null;
+    };
+    const applet = createMockApplet(sink);
+    const item = new OutputDeviceItem(applet);
+    item.bindControl(control);
+    control.addOutput(5, speakers);
+    control.addOutput(7, hdmi);
+
+    item._syncActiveDevice();
+    assertEqual(item._nameLabel.text, "Speakers", "header uses UI device name not sink name");
+    const speakersRow = item._devices.find((entry) => entry.id === 5);
+    const hdmiRow = item._devices.find((entry) => entry.id === 7);
+    assert(speakersRow.row.has_style_class_name("selected") === true, "marks Speakers by UI device id");
+    assert(speakersRow.row.has_style_pseudo_class("active") !== true, "Speakers row is outline-only when not hovered");
+    assert(hdmiRow.row.has_style_class_name("selected") !== true, "does not mark unrelated device");
 }
 
 section("OutputDeviceItem single device");
@@ -479,19 +596,33 @@ if (inputItem) {
     inputItem._syncActiveDevice();
     const activeRow = inputItem._devices.find((entry) => entry.id === 0);
     assert(activeRow !== undefined, "finds active input device row");
-    assertEqual(activeRow.row._radio.icon_name, "radio-checked-symbolic", "marks active input row");
+    assert(activeRow.row.has_style_class_name("selected") === true, "active input row has selection style");
+    assert(activeRow.row.has_style_pseudo_class("active") !== true, "selected input row is outline-only without hover");
+    assert(String(activeRow.row.style || "").indexOf("12, 117, 222") !== -1, "selected input outline uses sliderActiveColor");
+    assert(String(activeRow.row.style || "").indexOf("inset 0 0 0 1px") !== -1, "selected input outline is thin 1px ring");
+    assert(String(activeRow.row.style || "").indexOf("0.55") !== -1, "selected input outline is muted");
+    assert(activeRow.row._radio === undefined, "input rows have no radio icon");
 
     const usbRow = inputItem._devices.find((entry) => entry.id === 1);
-    assertEqual(usbRow.row._radio.icon_name, "radio-off-symbolic", "inactive input row is off");
+    assert(usbRow.row.has_style_class_name("selected") !== true, "inactive input row has no selection style");
+    assert(usbRow.row.has_style_pseudo_class("active") !== true, "inactive input row is not highlighted");
 
     usbRow.row.emit("button-press-event", { get_button: () => 1 });
     assert(control._activeInput === usbMic, "input row click switches device");
     assertEqual(control._activeInput.description, "USB Microphone", "active input updated");
+    assertEqual(inputItem._activeUiDeviceId, 1, "tracks UI device id from active-input-update");
+    assertEqual(inputItem._nameLabel.text, "USB Microphone", "input header shows selected UI device");
+    assert(usbRow.row.has_style_class_name("selected") === true, "selected input row outlined after switch");
+    assert(usbRow.row.has_style_pseudo_class("active") !== true, "selected input row has outline not highlight");
+    assert(activeRow.row.has_style_class_name("selected") !== true, "previous input row loses selection style");
+    assert(activeRow.row.has_style_pseudo_class("active") !== true, "previous input row clears highlight");
 
     inputItem._header.emit("button-release-event", { get_button: () => 1 });
     assert(inputItem._listBox.visible === true, "input header expands device list");
+    assert(inputItem._header.has_style_pseudo_class("active") !== true, "expanded input header has no pinned highlight");
     inputItem._header.emit("button-release-event", { get_button: () => 1 });
     assert(inputItem._listBox.visible === false, "input header collapses device list");
+    assert(inputItem._header.has_style_pseudo_class("active") !== true, "collapsed input header stays without highlight");
 }
 
 section("InputDeviceItem single device");

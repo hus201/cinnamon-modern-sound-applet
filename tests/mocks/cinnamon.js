@@ -51,16 +51,42 @@ function createActor(name) {
         },
         connect(signal, handler) {
             this._handlers = this._handlers || {};
-            this._handlers[signal] = handler;
-            return 1;
+            this._handlers[signal] = this._handlers[signal] || [];
+            this._handlers[signal].push(handler);
+            return this._handlers[signal].length;
         },
         disconnect() {},
         emit(signal, ...args) {
-            if (this._handlers && this._handlers[signal])
-                return this._handlers[signal](this, ...args);
+            if (this._handlers && this._handlers[signal]) {
+                for (const handler of this._handlers[signal])
+                    handler(this, ...args);
+            }
         },
         destroy() {},
-        change_style_pseudo_class() {},
+        change_style_pseudo_class(name, enabled) {
+            this._pseudoClasses = this._pseudoClasses || {};
+            if (enabled)
+                this._pseudoClasses[name] = true;
+            else
+                delete this._pseudoClasses[name];
+        },
+        has_style_pseudo_class(name) {
+            return !!(this._pseudoClasses && this._pseudoClasses[name]);
+        },
+        get_theme_node() {
+            const self = this;
+            return {
+                get_color(property) {
+                    if (property === "-slider-active-background-color")
+                        return self._sliderActiveColor || { red: 12, green: 117, blue: 222, alpha: 255 };
+                    return { red: 0, green: 0, blue: 0, alpha: 255 };
+                }
+            };
+        },
+        setSliderActiveColor(color) {
+            this._sliderActiveColor = color;
+            this.emit("style-changed");
+        },
         get_direction() {
             return 0;
         },
@@ -381,9 +407,19 @@ function setupCinnamonMocks() {
                         Object.assign(this, params || {});
                         this._children = [];
                         this._handlers = {};
+                        this.styleClasses = [];
+                        if (params && params.style_class) {
+                            String(params.style_class).split(/\s+/).forEach((cls) => {
+                                if (cls)
+                                    this.styleClasses.push(cls);
+                            });
+                        }
                         this.visible = params && params.visible !== undefined ?
                             params.visible :
                             true;
+                        this.hover = params && params.hover !== undefined ?
+                            params.hover :
+                            false;
                     }
 
                     add_actor(child) {
@@ -402,6 +438,23 @@ function setupCinnamonMocks() {
                         });
                     }
 
+                    add_style_class_name(cls) {
+                        if (this.styleClasses.indexOf(cls) === -1)
+                            this.styleClasses.push(cls);
+                    }
+
+                    remove_style_class_name(cls) {
+                        this.styleClasses = this.styleClasses.filter((name) => name !== cls);
+                    }
+
+                    has_style_class_name(cls) {
+                        return this.styleClasses.indexOf(cls) !== -1;
+                    }
+
+                    set_style(style) {
+                        this.style = style;
+                    }
+
                     connect(signal, handler) {
                         this._handlers[signal] = handler;
                         return 1;
@@ -413,7 +466,16 @@ function setupCinnamonMocks() {
                     }
 
                     destroy() {}
-                    change_style_pseudo_class() {}
+                    change_style_pseudo_class(name, enabled) {
+                        this._pseudoClasses = this._pseudoClasses || {};
+                        if (enabled)
+                            this._pseudoClasses[name] = true;
+                        else
+                            delete this._pseudoClasses[name];
+                    }
+                    has_style_pseudo_class(name) {
+                        return !!(this._pseudoClasses && this._pseudoClasses[name]);
+                    }
                 },
                 Table: class {
                     constructor(params) {
@@ -445,6 +507,19 @@ function setupCinnamonMocks() {
                     }
 
                     set_child() {}
+                },
+                Widget: class {
+                    constructor(params) {
+                        const actor = createActor((params && params.style_class) || "widget");
+                        Object.assign(this, actor);
+                        Object.assign(this, params || {});
+                        this.visible = params && params.visible !== undefined ?
+                            params.visible :
+                            true;
+                        this.reactive = params && params.reactive !== undefined ?
+                            params.reactive :
+                            true;
+                    }
                 },
                 IconType: StIconType
             },
@@ -532,7 +607,8 @@ function setupCinnamonMocks() {
 
                     change_output(device) {
                         this._activeOutput = device;
-                        this._emit("active-output-update");
+                        const id = device.get_id ? device.get_id() : device.index;
+                        this._emit("active-output-update", id);
                     }
 
                     addOutput(id, device) {
@@ -551,7 +627,8 @@ function setupCinnamonMocks() {
 
                     change_input(device) {
                         this._activeInput = device;
-                        this._emit("active-input-update");
+                        const id = device.get_id ? device.get_id() : device.index;
+                        this._emit("active-input-update", id);
                     }
 
                     addInput(id, device) {
@@ -562,6 +639,26 @@ function setupCinnamonMocks() {
                     removeInput(id) {
                         delete this._inputs[id];
                         this._emit("input-removed", id);
+                    }
+
+                    lookup_device_from_stream(stream) {
+                        if (!stream)
+                            return null;
+
+                        if (stream.get_id) {
+                            const id = stream.get_id();
+                            return this._outputs[id] || this._inputs[id] || null;
+                        }
+
+                        for (const id of Object.keys(this._outputs)) {
+                            if (this._outputs[id] === stream)
+                                return this._outputs[id];
+                        }
+                        for (const id of Object.keys(this._inputs)) {
+                            if (this._inputs[id] === stream)
+                                return this._inputs[id];
+                        }
+                        return null;
                     }
 
                     lookup_stream_id(id) {
@@ -685,11 +782,15 @@ function createMockStream({
     };
 }
 
-function createMockOutput(id, description, origin, iconName) {
+function createMockOutput(id, description, origin, iconName, streamIndex) {
     return {
-        index: id,
+        /* Pulse sink/source index — may differ from MixerUIDevice id. */
+        index: streamIndex !== undefined ? streamIndex : id,
         description,
         origin,
+        get_id() {
+            return id;
+        },
         get_icon_name() {
             return iconName || "audio-card-symbolic";
         }
