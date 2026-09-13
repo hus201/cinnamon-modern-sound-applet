@@ -168,6 +168,8 @@ class IconApplet {
 
     _init() {
         this.actor = createActor("IconApplet");
+        this._appletLabel = "";
+        this._appletLabelHidden = true;
     }
 
     set_applet_icon_symbolic_name(name) {
@@ -176,6 +178,15 @@ class IconApplet {
 
     set_applet_tooltip(text) {
         this._appletTooltip = text;
+    }
+
+    set_applet_label(text) {
+        this._appletLabel = text || "";
+        this._appletLabelHidden = this._appletLabel === "";
+    }
+
+    hide_applet_label(hide) {
+        this._appletLabelHidden = !!hide;
     }
 }
 
@@ -245,6 +256,7 @@ class AppletSettings {
             playVolumeChangeSound: true,
             showVolumeOsdOnScroll: true,
             tooltipShowVolume: true,
+            showVolumePercentage: false,
             scrollStep: 5,
             invertScrollDirection: false,
             middleClickAction: "mute",
