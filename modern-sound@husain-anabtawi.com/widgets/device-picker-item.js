@@ -253,7 +253,16 @@ class DevicePickerItem extends PopupMenu.PopupBaseMenuItem {
         return false;
     }
 
+    _isSectionEnabled() {
+        return true;
+    }
+
     _updateVisibility() {
+        if (!this._isSectionEnabled()) {
+            this.actor.hide();
+            return;
+        }
+
         const hide = this._hideWhenSingle() && this._devices.length === 1;
         if (hide)
             this.actor.hide();
@@ -332,6 +341,10 @@ class OutputDeviceItem extends DevicePickerItem {
 }
 
 class InputDeviceItem extends DevicePickerItem {
+    _isSectionEnabled() {
+        return this._applet.showInputDevice !== false;
+    }
+
     _hideWhenSingle() {
         return this._applet.hideSingleInputDevice === true;
     }

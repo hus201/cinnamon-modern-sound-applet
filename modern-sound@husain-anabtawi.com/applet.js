@@ -58,6 +58,15 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._settings.bind("invertScrollDirection", "invertScrollDirection");
         this._settings.bind("playVolumeChangeSound", "playVolumeChangeSound");
         this._settings.bind("showVolumeOsdOnScroll", "showVolumeOsdOnScroll");
+        this._settings.bind("showQuickActions", "showQuickActions", () => {
+            this._syncMenuSectionVisibility();
+        });
+        this._settings.bind("showApplicationVolumes", "showApplicationVolumes", () => {
+            this._syncMenuSectionVisibility();
+        });
+        this._settings.bind("showInputDevice", "showInputDevice", () => {
+            this._syncMenuSectionVisibility();
+        });
         this._settings.bind("hideSingleOutputDevice", "hideSingleOutputDevice", () => {
             this._syncDeviceVisibility();
         });
@@ -81,16 +90,18 @@ class ModernSoundApplet extends Applet.IconApplet {
         this._inputDevice.bindControl(this._control);
         this._menu.addMenuItem(this._inputDevice);
 
-        addSectionSeparator(this._menu);
+        this._appsSeparator = addSectionSeparator(this._menu);
 
         this._applications = new ApplicationsItem(this);
         this._applications.bindControl(this._control);
         this._menu.addMenuItem(this._applications);
 
-        addSectionSeparator(this._menu);
+        this._actionsSeparator = addSectionSeparator(this._menu);
 
         this._quickActions = new QuickActionsItem(this);
         this._menu.addMenuItem(this._quickActions);
+
+        this._syncMenuSectionVisibility();
 
         this._control.connect("state-changed", () => {
             if (this._control.get_state() === Cvc.MixerControlState.READY)
@@ -152,6 +163,26 @@ class ModernSoundApplet extends Applet.IconApplet {
             this._outputDevice._updateVisibility();
         if (this._inputDevice)
             this._inputDevice._updateVisibility();
+    }
+
+    _syncMenuSectionVisibility() {
+        if (this._applications)
+            this._applications._updateVisibility();
+        if (this._inputDevice)
+            this._inputDevice._updateVisibility();
+        if (this._quickActions)
+            this._quickActions.actor.visible = this.showQuickActions !== false;
+        this._syncMenuSeparators();
+    }
+
+    _syncMenuSeparators() {
+        const appsVisible = this._applications && this._applications.actor.visible;
+        const actionsVisible = this._quickActions && this._quickActions.actor.visible;
+
+        if (this._appsSeparator)
+            this._appsSeparator.actor.visible = appsVisible;
+        if (this._actionsSeparator)
+            this._actionsSeparator.actor.visible = actionsVisible;
     }
 
     _syncMuteStates() {
